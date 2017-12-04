@@ -39,6 +39,7 @@ MSG_RAW_GYROSCOPE = 'gyro_raw_msg'
 MSG_RAW_ACCELEROMETER = 'accel_raw_msg'
 MSG_BAROMETER = 'baro_msg'
 MSG_ATTITUDE = 'attitude_msg'
+MSG_EULER_ANGLES = 'euler_angles_msg'
 MSG_DISTANCE_SENSOR = 'distance_sensor_msg'
 
 

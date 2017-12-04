@@ -64,15 +64,17 @@ class Drone:
         #Barometer
         self._baro_altitude = 0.0
         
-        self._update_property = {'state_msg':self._update_state,
-                            'global_position_msg':self._update_global_position,
-                            'local_position_msg':self._update_local_position,
-                            'global_home_msg':self._update_global_home,
-                            'local_velocity_msg':self._update_local_velocity,
-                            'gyro_raw_msg':self._update_gyro_raw,
-                            'acceleration_raw_msg':self._update_acceleration_raw,
-                            'euler_angle_msg':self._update_euler_angle,
-                            'baro_msg':self._update_barometer}
+        self._update_property = {
+            mt.MSG_STATE : self._update_state,
+            mt.MSG_GLOBAL_POSITION : self._update_global_position,
+            mt.MSG_LOCAL_POSITION : self._update_local_position,
+            mt.MSG_GLOBAL_HOME : self._update_global_home,
+            mt.MSG_VELOCITY : self._update_local_velocity,
+            mt.MSG_RAW_GYROSCOPE : self._update_gyro_raw,
+            mt.MSG_RAW_ACCELEROMETER : self._update_acceleration_raw,
+            mt.MSG_BAROMETER : self._update_barometer,
+            mt.MSG_EULER_ANGLES : self._update_euler_angle
+        }
         
         #self.conn.add_message_listener('*',self.on_message_receive)
         
@@ -85,6 +87,9 @@ class Drone:
 
     @property
     def global_position(self):
+        """
+        Longitude, latitude, altitude
+        """
         return np.array([self._longitude,self._latitude,self._altitude])
     
     def _update_global_position(self,msg):
@@ -95,6 +100,9 @@ class Drone:
     
     @property
     def global_home(self):
+        """
+        Longitude, latitude, altitude
+        """
         return np.array([self._home_longitude,self._home_latitude,self._home_altitude])
     
     def _update_global_home(self,msg):
@@ -104,6 +112,9 @@ class Drone:
     
     @property
     def local_position(self):
+        """
+        North, east, down
+        """
         return np.array([self._north,self._east,self._down])
     
     def _update_local_position(self,msg):
@@ -139,7 +150,10 @@ class Drone:
         self._connected = True
     
     @property
-    def euler_angle(self):
+    def euler_angles(self):
+        """
+        Roll, pitch, yaw
+        """
         return np.array([self._roll,self._pitch,self._yaw])
     
     def _update_euler_angle(self,msg):

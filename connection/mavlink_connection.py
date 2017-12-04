@@ -154,7 +154,7 @@ class MavlinkConnection(connection.Connection):
                 home = mt.GlobalFrameMessage(timestamp, float(msg.latitude)/1e7, float(msg.longitude)/1e7, float(msg.altitude)/1000)
                 self.notify_message_listeners(mt.MSG_GLOBAL_HOME, home)
 
-            elif msg.get_type() == 'SCALED_IMU':
+            elif msg.get_type() == 'RAW_IMU':
                 # break out the message into its respective messages for here
                 accel = mt.BodyFrameMessage(timestamp, msg.xacc, msg.yacc, msg.zacc) # units are [mg]
                 self.notify_message_listeners(mt.MSG_RAW_ACCELEROMETER, accel)
@@ -172,6 +172,12 @@ class MavlinkConnection(connection.Connection):
                 orientation = msg.orientation
                 meas = mt.DistanceSensorMessage(timestamp, float(msg.min_distance)/100, float(msg.max_distance)/100, direction, float(msg.current_distance)/100, float(msg.covariance)/100)
                 self.notify_message_listeners(mt.MSG_DISTANCE_SENSOR, meas)
+
+            # http://mavlink.org/messages/common#HIL_STATE_QUATERNION
+            elif msg.get_type() == 'HIL_STATE_QUATERNION':
+                quat = msg.attitude_quaternion
+                fm = mt.FrameMessage(quat[0], quat[1], quat[2], quat[3])
+                self.notify_message_listeners(mt.MSG_EULER_ANGLES, fm.euler_angles)
 
             #elif msg.get_type() == 'POSITION_TARGET_LOCAL_NED':
                 # DEBUG
@@ -303,6 +309,13 @@ class MavlinkConnection(connection.Connection):
     def cmd_motors(self, motor1, motor2, motor3, motor4):
         # TODO: implement this
         pass
+    
+    def cmd_actuator_control_target(thrust, pitch_moment, yaw_moment, roll_moment):
+        """
+        http://mavlink.org/messages/common#SET_ACTUATOR_CONTROL_TARGET
+        """
+        pass
+        # self._master.mav.SET_ACTUATOR_CONTROL_TARGET
 
     def cmd_position(self, n, e, d, heading):
         time_boot_ms = 0  # this does not need to be set to a specific time
