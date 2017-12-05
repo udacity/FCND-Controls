@@ -8,6 +8,7 @@ Created on Tue Oct 24 16:17:28 2017
 from drone import Drone
 from enum import Enum
 from connection import message_types as mt
+from controllers import PDController
 import numpy as np
 import time
 
@@ -24,6 +25,7 @@ class States(Enum):
 class BackyardFlyer(Drone):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self.controller = PDController()
         self.target_position = np.array([0.0, 0.0, 0.0])
         #self.global_home = np.array([0.0,0.0,0.0])  # can't set this here, no setter for this property
         self.all_waypoints = []
@@ -40,6 +42,14 @@ class BackyardFlyer(Drone):
 
         @self.msg_callback(mt.MSG_LOCAL_POSITION)
         def local_position_callback(msg_name, msg):
+            angle_inputs = self.controller.update(self.local_position, self.target_position, self.euler_angles, self.local_velocity)
+            throttle = angle_inputs[0] 
+            yaw_rate = angle_inputs[1] 
+            pitch_rate = angle_inputs[2] 
+            roll_rate = angle_inputs[3]
+            self.cmd_motors(throttle, yaw_rate, pitch_rate, roll_rate)
+
+            # self.cmd
             if self.flight_state == States.MANUAL:
                 pass
             elif self.flight_state == States.ARMING:
@@ -167,6 +177,7 @@ class BackyardFlyer(Drone):
 
 
 if __name__ == "__main__":
+    ctrl = PDController()
     drone = BackyardFlyer(threaded=False)
     time.sleep(2)
     drone.start()

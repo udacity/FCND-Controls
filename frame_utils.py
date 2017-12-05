@@ -32,3 +32,24 @@ def local_to_global(local_position, global_home):
 
     lla = np.array([lon, lat, -local_position[2]])
     return lla
+
+
+def ned_to_eun(v):
+    """
+    Helper function to convert from NED frame to unity frame (EUN).
+    """
+    north = v[0]
+    east = v[1]
+    down = v[2]
+    return np.float32([east, -down, north])
+
+
+def eun_to_ned(v):
+    """
+    Helper function to convert from unity frame (EUN) to NED frame.
+    """
+    east = v[0]
+    up = v[1]
+    north = v[2]
+    return np.float32([north, east, -up])
+

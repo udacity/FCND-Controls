@@ -8,8 +8,7 @@ import time
 
 
 class Drone:
-    
-    def __init__(self,**kwargs):
+    def __init__(self, **kwargs):
         if 'threaded' in kwargs.keys():
             thread = kwargs['threaded']
         else:
@@ -125,6 +124,9 @@ class Drone:
     
     @property
     def local_velocity(self):
+        """
+        Returns north velocity, east velocity, and velocity down (NED)
+        """
         return np.array([self._velocity_north,self._velocity_east,self._velocity_down])
     
     def _update_local_velocity(self,msg):
@@ -404,11 +406,19 @@ class Drone:
             self.connection.cmd_velocity(velocity_north,velocity_east,velocity_down,heading)
         except:
             print("cmd_velocity not defined")
+
     
-    def cmd_motors(self,motor_rpm):
+    # def cmd_motors(self,motor_rpm):
+    #     """Command the rmp of the motors"""
+    #     try:
+    #         self.connection.cmd_motors(motor_rpm)
+    #     except:
+    #         print("cmd_motors not defined")
+
+    def cmd_motors(self, throttle, yaw_rate, pitch_rate, roll_rate):
         """Command the rmp of the motors"""
         try:
-            self.connection.cmd_motors(motor_rpm)
+            self.connection.cmd_actuator_control_target(roll_rate, pitch_rate, yaw_rate, throttle)
         except:
             print("cmd_motors not defined")
             
