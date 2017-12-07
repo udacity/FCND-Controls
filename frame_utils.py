@@ -41,9 +41,12 @@ def ned_to_eun(v):
     north = v[0]
     east = v[1]
     down = v[2]
-    return np.float32([east, -down, north])
+    if down < 0:
+        down = -down
+    return np.float32([east, down, north])
 
 
+# TODO: not 100% sure this is correct, mainly about up
 def eun_to_ned(v):
     """
     Helper function to convert from unity frame (EUN) to NED frame.

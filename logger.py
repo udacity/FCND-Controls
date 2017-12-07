@@ -4,6 +4,7 @@ import os
 
 
 class Logger:
+
     def __init__(self, *args):
         log_dir = 'Logs'
         if not os.path.exists(log_dir):

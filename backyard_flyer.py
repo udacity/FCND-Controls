@@ -23,6 +23,7 @@ class States(Enum):
 
 
 class BackyardFlyer(Drone):
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.controller = PDController()
@@ -36,20 +37,27 @@ class BackyardFlyer(Drone):
         self.flight_state = States.MANUAL
         self.whatever = States.MANUAL
 
+    def use_controller(self):
+        # avoids bug where local position is still global position
+        if self.local_position[0] > 1e6 or self.local_position[1] > 1e6:
+            return
+        throttle, pitch_rate, yaw_rate, roll_rate = self.controller.update(
+            self.local_position, self.target_position, self.euler_angles, self.local_velocity
+        )
+        self.cmd_motors(throttle, pitch_rate, yaw_rate, roll_rate)
+
     def callbacks(self):
         """ Define your callbacks within here"""
         super().callbacks()
 
+        # TODO: change this msg ?
+        @self.msg_callback(mt.MSG_EULER_ANGLES)
+        def hil_state_callback(msg_name, msg):
+            if self.flight_state == States.TAKEOFF or self.flight_state == States.WAYPOINT or self.flight_state == States.LANDING:
+                self.use_controller()
+
         @self.msg_callback(mt.MSG_LOCAL_POSITION)
         def local_position_callback(msg_name, msg):
-            angle_inputs = self.controller.update(self.local_position, self.target_position, self.euler_angles, self.local_velocity)
-            throttle = angle_inputs[0] 
-            yaw_rate = angle_inputs[1] 
-            pitch_rate = angle_inputs[2] 
-            roll_rate = angle_inputs[3]
-            self.cmd_motors(throttle, yaw_rate, pitch_rate, roll_rate)
-
-            # self.cmd
             if self.flight_state == States.MANUAL:
                 pass
             elif self.flight_state == States.ARMING:
@@ -59,8 +67,7 @@ class BackyardFlyer(Drone):
                     self.all_waypoints = self.calculate_box()
                     self.waypoint_transition()
             elif self.flight_state == States.WAYPOINT:
-                if np.linalg.norm(self.target_position[0:2] -
-                                  self.local_position[0:2]) < 1.0:
+                if np.linalg.norm(self.target_position[0:2] - self.local_position[0:2]) < 1.0:
                     if len(self.all_waypoints) > 0:
                         self.waypoint_transition()
                     else:
@@ -108,8 +115,7 @@ class BackyardFlyer(Drone):
 
     def calculate_box(self):
         print("Setting Home")
-        local_waypoints = [[10.0, 0.0, 3.0], [10.0, 10.0, 3.0],
-                           [0.0, 10.0, 3.0], [0.0, 0.0, 3.0]]
+        local_waypoints = [[10.0, 0.0, 3.0], [10.0, 10.0, 3.0], [0.0, 10.0, 3.0], [0.0, 0.0, 3.0]]
         #local_waypoints = [[10.0, 0.0, -3.0],[10.0, 10.0, -3.0],[0.0, 10.0, -3.0],[0.0, 0.0, -3.0]]
         #for i in range(0,4):
         #    global_waypoints.extend([frame_utils.local_to_global(local_waypoints[i, :], global_home)])
@@ -119,10 +125,8 @@ class BackyardFlyer(Drone):
         print("arming transition")
         self.take_control()
         self.arm()
-        self.set_home_position(
-            self.global_position[0], self.global_position[1],
-            self.global_position[
-                2])  #set the current location to be the home position
+        self.set_home_position(self.global_position[0], self.global_position[1],
+                               self.global_position[2])  #set the current location to be the home position
 
         self.flight_state = States.ARMING
         #self.whatever = States.ARMING
@@ -138,12 +142,12 @@ class BackyardFlyer(Drone):
     def waypoint_transition(self):
         print("waypoint transition")
         self.target_position = self.all_waypoints.pop(0)
-        self.cmd_position(self.target_position[0], self.target_position[1],
-                          self.target_position[2], 0.0)
+        self.cmd_position(self.target_position[0], self.target_position[1], self.target_position[2], 0.0)
         self.flight_state = States.WAYPOINT
 
     def landing_transition(self):
         print("landing transition")
+        self.target_position[2] = 0
         self.land()
         self.flight_state = States.LANDING
 
@@ -177,7 +181,6 @@ class BackyardFlyer(Drone):
 
 
 if __name__ == "__main__":
-    ctrl = PDController()
     drone = BackyardFlyer(threaded=False)
-    time.sleep(2)
+    time.sleep(3)
     drone.start()
