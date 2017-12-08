@@ -71,10 +71,10 @@ class PDController(object):
         target_pos[1] = np.abs(target_pos[1])
 
         pos_error = target_pos - local_pos
-        print('local position', local_pos)
-        print('target position', target_pos)
-        print('position error', pos_error)
-        print('euler angles', np.degrees(euler_angles))
+        # print('local position', local_pos)
+        # print('target position', target_pos)
+        # print('position error', pos_error)
+        # print('euler angles', np.degrees(euler_angles))
 
         # deadband position error
         if np.linalg.norm([pos_error[0], pos_error[2]]) >= 1:
@@ -114,7 +114,7 @@ class PDController(object):
         # TODO: implement 2nd half to this
 
         # throttle, pitch rate, yaw rate, roll rate
-        print('throttle, pitch rate, yaw rate, roll rate', thrust, pitch_rate, yaw_rate, roll_rate)
-        print('dt = ', self.dt)
-        print()
+        # print('throttle, pitch rate, yaw rate, roll rate', thrust, pitch_rate, yaw_rate, roll_rate)
+        # print('dt = ', self.dt)
+        # print()
         return thrust, pitch_rate, yaw_rate, roll_rate
