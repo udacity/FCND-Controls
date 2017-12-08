@@ -101,7 +101,7 @@ class PDController(object):
         vel_error_bodyd = (vel_error_body - self.last_vel_error_body) / self.dt
         self.last_vel_error_body = vel_error_body
 
-        throttle = vel_cmd_body[1]
+        thrust = vel_cmd_body[1]
         pitch_rate = self.Kp_vel * vel_error_body[2] + self.Kd_vel * vel_error_bodyd[2]
         yaw_rate = 0
         roll_rate = -self.Kp_vel * vel_error_body[0] - self.Kd_vel * vel_error_bodyd[0]
@@ -111,8 +111,10 @@ class PDController(object):
             pitch_rate = self.max_tilt * pitch_rate / angle_magnitude
             roll_rate = self.max_tilt * roll_rate / angle_magnitude
 
+        # TODO: implement 2nd half to this
+
         # throttle, pitch rate, yaw rate, roll rate
-        print('throttle, pitch rate, yaw rate, roll rate', throttle, pitch_rate, yaw_rate, roll_rate)
+        print('throttle, pitch rate, yaw rate, roll rate', thrust, pitch_rate, yaw_rate, roll_rate)
         print('dt = ', self.dt)
         print()
-        return throttle, pitch_rate, yaw_rate, roll_rate
+        return thrust, pitch_rate, yaw_rate, roll_rate

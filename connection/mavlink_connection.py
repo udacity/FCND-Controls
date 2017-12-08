@@ -187,8 +187,8 @@ class MavlinkConnection(connection.Connection):
             elif msg.get_type() == 'HIL_STATE_QUATERNION':
                 timestamp = msg.time_usec
                 quat = msg.attitude_quaternion
+                # NOTE: quat is currently containing euler angles, not quaternion values
                 # fm = mt.FrameMessage(timestamp, quat[0], quat[1], quat[2], quat[3])
-
                 fm = mt.FrameMessage(timestamp, quat[1], quat[2], quat[3])
                 self.notify_message_listeners(mt.MSG_EULER_ANGLES, fm)
 
@@ -290,21 +290,15 @@ class MavlinkConnection(connection.Connection):
         custom_sub_mode = 0  # not used for manual/offboard
         self.send_long_command(mavutil.mavlink.MAV_CMD_DO_SET_MODE, mode, custom_mode, custom_sub_mode)
 
-    def cmd_attitude(self, yaw, pitch, roll, collective):
+    def cmd_attitude_rate(self, roll_rate, pitch_rate, yaw_rate, collective_thrust):
         time_boot_ms = 0  # this does not need to be set to a specific time
-        # TODO: convert the attitude to a quaternion
-        q = [0, 0, 0, 0]
         mask = 0b00000111
-        self._master.mav.set_attitude_target_send(
-            time_boot_ms, self._target_system, self._target_component, mask, q, 0, 0, 0, collective
-        )
-
-    def cmd_attitude_rate(self, yaw_rate, pitch_rate, roll_rate, collective):
-        time_boot_ms = 0  # this does not need to be set to a specific time
+        # TODO: convert the angular rates to a quaternion
         q = [0, 0, 0, 0]
-        mask = 0b10000000
+        collective_thrust = np.clip(collective_thrust, -1, 1)
         self._master.mav.set_attitude_target_send(
-            time_boot_ms, target_system, target_component, mask, q, roll_rate, pitch_rate, yaw_rate, collective
+            time_boot_ms, self._target_system, self._target_component, mask, q, roll_rate, pitch_rate, yaw_rate,
+            collective_thrust
         )
 
     def cmd_velocity(self, vn, ve, vd, heading):

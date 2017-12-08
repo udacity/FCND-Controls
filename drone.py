@@ -152,7 +152,7 @@ class Drone:
     @property
     def euler_angles(self):
         """
-        Roll, pitch, yaw
+        Roll, pitch, yaw (NED frame)
         """
         return np.array([self._roll, self._pitch, self._yaw])
 
@@ -383,37 +383,36 @@ class Drone:
         except:
             print("land not defined")
 
-    def cmd_attitude_rate(self, roll_rate, pitch_rate, yaw_rate, collective):
-        """Command the vehicle orientation rates
-            roll_rate,pitch_rate,yaw_rate: in deg/s
-            collective: upward acceleration in m/s**2
+    def cmd_attitude_rate(self, roll_rate, pitch_rate, yaw_rate, collective_thrust):
+        """
+        Command the vehicle orientation rates.
+            
+        roll_rate, pitch_rate, yaw_rate: in radians/second
+        collective_thrust: normalized thrust s.t. between [-1, 1] or [0, 1]
         """
         try:
-            self.connection.cmd_attitude_rate(roll_rate, pitch_rate, yaw_rate, collective)
+            self.connection.cmd_attitude_rate(roll_rate, pitch_rate, yaw_rate, collective_thrust)
         except:
             print("cmd_attitude_rate not defined")
 
     def cmd_velocity(self, velocity_north, velocity_east, velocity_down, heading):
-        """Command the vehicle velocity
-            north_velocity,east_velocity,down_velocity: in m/s
-            heading: in degrees
+        """
+        Command the vehicle velocity.
+
+        north_velocity, east_velocity, down_velocity: in meters/second
+        heading: in radians
         """
         try:
             self.connection.cmd_velocity(velocity_north, velocity_east, velocity_down, heading)
         except:
             print("cmd_velocity not defined")
 
-    # def cmd_motors(self,motor_rpm):
-    #     """Command the rmp of the motors"""
-    #     try:
-    #         self.connection.cmd_motors(motor_rpm)
-    #     except:
-    #         print("cmd_motors not defined")
-
-    def cmd_motors(self, throttle, pitch_rate, yaw_rate, roll_rate):
-        """Command the rmp of the motors"""
+    def cmd_motors(self, motor_rpm):
+        """
+        Command the rmp of the motors.
+        """
         try:
-            self.connection.cmd_actuator_control_target(throttle, pitch_rate, yaw_rate, roll_rate)
+            self.connection.cmd_motors(motor_rpm)
         except:
             print("cmd_motors not defined")
 

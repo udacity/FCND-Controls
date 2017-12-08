@@ -62,7 +62,7 @@ class TestClass:
         def gps_listener_test(self, name, data):            
             # need to be constantly sending commands for PX4 to accept offboard control
             # send a position
-            if self.state[0] is False or self.state[1] is False:
+            if not self.state[0] or not self.state[1]:
                 self.mavconn.cmd_position(0, 0, 0, 0)
             else:
                 self.mavconn.takeoff(0, 0, -3)
@@ -70,10 +70,10 @@ class TestClass:
 
         @self.on_attribute('state')
         def state_listener_test(self, name, data):
-            if self.state[1] is False:
+            if not self.state[1]:
                 self.mavconn.take_control()
                 print("requesting offboard")
-            elif self.state[0] is False:
+            elif not self.state[0]:
                 self.mavconn.arm()
                 print("arming")
 
@@ -151,11 +151,11 @@ class TestClass:
             prev_time = current_time
 
             '''
-            if self.state[1] is False:
+            if not self.state[1]:
                 self.mavconn.take_control()  # request offboard control of the vehicle
                 print("requesting offboard control")
 
-            elif self.state[0] is False:
+            elif not self.state[0]:
                 # TODO: probably a better way of sending an arm command
                 # especially since this loop is running 5x faster than the state info is updated
                 self.mavconn.arm()  # this would ideally be done by simply calling self.arm(), just not needed for testing connection class atm

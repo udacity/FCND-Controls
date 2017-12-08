@@ -59,7 +59,7 @@ class FakeDrone:
             # need to be constantly sending commands for PX4 to accept offboard control
             # send a position
             print(self.gps_position)
-            if self.state[0] is False or self.state[1] is False:
+            if not self.state[0] or not self.state[1]:
                 #self.mavconn.cmd_position(0, 0, 0, 0)
                 i = 1
             else:
@@ -72,10 +72,10 @@ class FakeDrone:
 
         @self.on_attribute('state')
         def state_listener_test(self, name, data):
-            if self.state[1] is False:
+            if not self.state[1]:
                 self.mavconn.take_control()
                 print("requesting offboard")
-            elif self.state[0] is False:
+            elif not self.state[0]:
                 self.mavconn.arm()
                 print("arming")
 
