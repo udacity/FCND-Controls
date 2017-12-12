@@ -114,16 +114,14 @@ class BackyardFlyer(Drone):
 
     def calculate_box(self):
         print("Setting Home")
-        local_waypoints = [[10.0, 0.0, 3.0], [10.0, 10.0, 3.0], [0.0, 10.0, 3.0], [0.0, 0.0, 3.0]]
-        #local_waypoints = [[10.0, 0.0, -3.0],[10.0, 10.0, -3.0],[0.0, 10.0, -3.0],[0.0, 0.0, -3.0]]
+        local_waypoints = [[0.0, 10.0, 3.0], [10.0, 10.0, 3.0], [10.0, 0.0, 3.0], [0.0, 0.0, 3.0]]
         return local_waypoints
 
     def arming_transition(self):
         print("arming transition")
         self.take_control()
         self.arm()
-        self.set_home_position(self.global_position[0], self.global_position[1],
-                               self.global_position[2])  #set the current location to be the home position
+        self.set_home_position(self.global_position[0], self.global_position[1], self.global_position[2])
 
         self.flight_state = States.ARMING
 

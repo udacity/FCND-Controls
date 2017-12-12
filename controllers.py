@@ -7,7 +7,6 @@ components:
     waypoint following
 """
 import numpy as np
-from frame_utils import ned_to_eun
 import time
 
 
@@ -54,81 +53,62 @@ class PDController(object):
         self.last_vel_error_body = np.float32([0, 0, 0])
         self.time_since_last_update = time.time()
 
-    # def update(self, local_pos, target_pos, euler_angles, local_vel, angular_vel):
-    def update(self, local_pos, target_pos, euler_angles, local_vel):
+    # def update(self, local_position, target_position, euler_angles, local_velocity, angular_velocity):
+    def update(self, local_position, target_position, euler_angles, local_velocity):
         """
-        local_pos - 3-element numpy array (NED frame), current position
-        target_pos - 3-element numpy array (NED frame), target position
-        euler_angles - 3-element numpy array (roll, pitch, yaw) NED frame
-        local_vel - 3-element numpy array (NED frame), local body velocity
+        local_position - 3-element numpy array (ENU frame), current position
+        target_position - 3-element numpy array (ENU frame), target position
+        euler_angles - 3-element numpy array (pitch, roll, yaw) ENU frame (radians)
+        body_velocity - 3-element numpy array (ENU frame)
+        angular_velocity 3-element numpy array (ENU frame)
         """
-        # thrust = np.float32([0, 0, 0])
-        # yaw_moment = np.float32([0, 0, 0])
-        # pitch_moment = np.float32([0, 0, 0])
-        # roll_moment = np.float32([0, 0, 0])
-
         now = time.time()
         self.dt = now - self.time_since_last_update
         self.time_since_last_update = now
 
-        vel_cmd_body = np.float32([0, 0, 0])
-        vel_cmd_local = np.float32([0, 0, 0])
-
-        roll = euler_angles[0]
-        pitch = euler_angles[1]
+        pitch = euler_angles[0]
+        roll = euler_angles[1]
         yaw = euler_angles[2]
 
-        local_pos = ned_to_eun(local_pos)
-        local_pos[1] = np.abs(local_pos[1])
-        target_pos = ned_to_eun(target_pos)
-        target_pos[1] = np.abs(target_pos[1])
+        position_err = target_position - local_position
+        print('local position', local_position)
+        print('target position', target_position)
+        print('position error', position_err)
+        print('euler angles', np.degrees(euler_angles))
 
-        pos_error = target_pos - local_pos
-        # print('local position', local_pos)
-        # print('target position', target_pos)
-        # print('position error', pos_error)
-        # print('euler angles', np.degrees(euler_angles))
-
+        vel_cmd_local = np.float32([0, 0, 0])
         # deadband position error
-        if np.linalg.norm([pos_error[0], pos_error[2]]) >= 1:
-            vel_cmd_local[0] = self.Kp_pos * pos_error[0]
-            vel_cmd_local[2] = self.Kp_pos * pos_error[2]
-        vel_cmd_local[1] = self.Kp_alt * pos_error[1]
+        if np.linalg.norm([position_err[0], position_err[1]]) >= 1:
+            vel_cmd_local[0] = self.Kp_pos * position_err[0]
+            vel_cmd_local[1] = self.Kp_pos * position_err[1]
+        vel_cmd_local[2] = self.Kp_alt * position_err[2]
 
         cos_yaw = np.cos(yaw)
         sin_yaw = np.sin(yaw)
 
-        vel_cmd_body[0] = cos_yaw * vel_cmd_local[0] - sin_yaw * vel_cmd_local[2]
-        vel_cmd_body[1] = vel_cmd_local[1]
-        vel_cmd_body[2] = sin_yaw * vel_cmd_local[0] + cos_yaw * vel_cmd_local[2]
+        vel_cmd_body = np.float32([0, 0, 0])
+        vel_cmd_body[0] = cos_yaw * vel_cmd_local[0] - sin_yaw * vel_cmd_local[1]
+        vel_cmd_body[1] = sin_yaw * vel_cmd_local[0] + cos_yaw * vel_cmd_local[1]
+        vel_cmd_body[2] = vel_cmd_local[2]
 
-        # NOTE: Not bothering with yaw error since we don't
-        # currently the drone doesn't rotate.
+        # TODO: add yaw error
 
-        local_vel = ned_to_eun(local_vel)
         vel_error_body = np.float32([0, 0, 0])
-        vel_error_bodyd = np.float32([0, 0, 0])
-
-        vel_error_body[0] = self.move_speed * vel_cmd_body[0] - local_vel[0]
-        vel_error_body[2] = self.move_speed * vel_cmd_body[2] - local_vel[2]
+        vel_error_body[0] = self.move_speed * vel_cmd_body[0] - local_velocity[0]
+        vel_error_body[1] = self.move_speed * vel_cmd_body[1] - local_velocity[1]
         vel_error_bodyd = (vel_error_body - self.last_vel_error_body) / self.dt
         self.last_vel_error_body = vel_error_body
 
-        thrust = vel_cmd_body[1]
-        pitch_rate = self.Kp_vel * vel_error_body[2] + self.Kd_vel * vel_error_bodyd[2]
-        yaw_rate = 0
+        thrust = vel_cmd_body[2]
+        pitch_rate = self.Kp_vel * vel_error_body[1] + self.Kd_vel * vel_error_bodyd[1]
         roll_rate = -self.Kp_vel * vel_error_body[0] - self.Kd_vel * vel_error_bodyd[0]
+        yaw_rate = 0
 
         angle_magnitude = np.linalg.norm([pitch_rate, roll_rate])
         if angle_magnitude > self.max_tilt:
             pitch_rate = self.max_tilt * pitch_rate / angle_magnitude
             roll_rate = self.max_tilt * roll_rate / angle_magnitude
 
-        # throttle, pitch rate, yaw rate, roll rate
-        # print('throttle, pitch rate, yaw rate, roll rate', thrust, pitch_rate, yaw_rate, roll_rate)
-        # print('dt = ', self.dt)
-        # print()
-        return thrust, pitch_rate, yaw_rate, roll_rate
 
         # # TODO: implement 2nd half to this
         # # assume stabilization
@@ -158,5 +138,8 @@ class PDController(object):
         # pitch_moment = self.Kp_q * pitch_rate_error
         # roll_moment = self.Kp_p * roll_rate_error
 
+        print('throttle, pitch rate, yaw rate, roll rate', thrust, pitch_rate, yaw_rate, roll_rate)
+        print('dt = ', self.dt)
+        print()
+        return thrust, pitch_rate, yaw_rate, roll_rate
         # return thrust, pitch_moment, yaw_moment, roll_moment
-

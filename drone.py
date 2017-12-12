@@ -20,47 +20,47 @@ class Drone:
         else:
             self.connection = mc.MavlinkConnection("tcp:127.0.0.1:5760", threaded=thread)
 
-        #Global position in degrees
+        # Global position in degrees
         self._longitude = 0.0
         self._latitude = 0.0
         self._altitude = 0.0
 
-        #Reference home position in degrees
+        # Reference home position in degrees
         self._home_longitude = 0.0
         self._home_latitude = 0.0
         self._home_altitude = 0.0
 
-        #Local positions in meters from the global home
+        # Local positions in meters from the global home
         self._north = 0.0
         self._east = 0.0
         self._down = 0.0
 
-        #Locally oriented velocity in m/s
+        # Locally oriented velocity in m/s
         self._velocity_north = 0.0
         self._velocity_east = 0.0
         self._velocity_down = 0.0
 
-        #Vehicle state information
+        # Vehicle state information
         self._armed = False
         self._guided = False
         self._connected = False
 
-        #Euler angles in degrees defined in 3-2-1 rotation
+        # Euler angles in degrees defined in 3-2-1 rotation
         self._roll = 0.0
         self._pitch = 0.0
         self._yaw = 0.0
 
-        #Body accelerations
+        # Body accelerations
         self._acceleration_x = 0.0
         self._acceleration_y = 0.0
         self._acceleration_z = 0.0
 
-        #Gyro rates
+        # Gyro rates
         self._gyro_x = 0.0
         self._gyro_y = 0.0
         self._gyro_z = 0.0
 
-        #Barometer
+        # Barometer
         self._baro_altitude = 0.0
 
         self._update_property = {
@@ -110,27 +110,27 @@ class Drone:
     @property
     def local_position(self):
         """
-        North, east, down
+        Return local position in ENU frame
         """
-        return np.array([self._north, self._east, self._down])
+        return np.array([self._east, self._north, self._down])
 
     def _update_local_position(self, msg):
 
         self._north = msg.north
         self._east = msg.east
-        self._down = msg.down
+        self._down = -msg.down
 
     @property
     def local_velocity(self):
         """
-        Returns north velocity, east velocity, and velocity down (NED)
+        Returns local velocity in ENU frame
         """
-        return np.array([self._velocity_north, self._velocity_east, self._velocity_down])
+        return np.array([self._velocity_east, self._velocity_north, self._velocity_down])
 
     def _update_local_velocity(self, msg):
         self._velocity_north = msg.north
         self._velocity_east = msg.east
-        self._velocity_down = msg.down
+        self._velocity_down = -msg.down
 
     @property
     def armed(self):
@@ -152,9 +152,9 @@ class Drone:
     @property
     def euler_angles(self):
         """
-        Roll, pitch, yaw (NED frame)
+        Pitch, roll, yaw (ENU frame)
         """
-        return np.array([self._roll, self._pitch, self._yaw])
+        return np.array([self._pitch, self._roll, self._yaw])
 
     def _update_euler_angle(self, msg):
         self._roll = msg.roll
@@ -163,7 +163,7 @@ class Drone:
 
     @property
     def acceleration_raw(self):
-        return np.array([self._acceleration_x, self._acceleration_y, self._acceleration_z])
+        return np.array([self._acceleration_x, self._acceleration_z, self._acceleration_y])
 
     def _update_acceleration_raw(self, msg):
         self._acceleration_x = msg.x
@@ -172,7 +172,7 @@ class Drone:
 
     @property
     def gyro_raw(self):
-        return np.array([self._gryo_x, self._gyro_y, self._gyro_z])
+        return np.array([self._gryo_x, self._gyro_z, self._gyro_y])
 
     def _update_gyro_raw(self, msg):
         self._gyro_x = msg.x
