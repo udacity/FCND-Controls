@@ -106,27 +106,27 @@ class Drone:
     @property
     def local_position(self):
         """
-        Return local position in ENU frame
+        Return local position in NED frame
         """
-        return np.array([self._east, self._north, self._down])
+        return np.array([self._north, self._east, self._down])
 
     def _update_local_position(self, msg):
 
         self._north = msg.north
         self._east = msg.east
-        self._down = -msg.down
+        self._down = msg.down
 
     @property
     def local_velocity(self):
         """
-        Returns local velocity in ENU frame
+        Returns local velocity in NED frame
         """
-        return np.array([self._velocity_east, self._velocity_north, self._velocity_down])
+        return np.array([self._velocity_north, self._velocity_east, self._velocity_down])
 
     def _update_local_velocity(self, msg):
         self._velocity_north = msg.north
         self._velocity_east = msg.east
-        self._velocity_down = -msg.down
+        self._velocity_down = msg.down
 
     @property
     def armed(self):
@@ -148,9 +148,9 @@ class Drone:
     @property
     def euler_angles(self):
         """
-        Pitch, roll, yaw (ENU frame)
+        roll, pitch, yaw (NED frame)
         """
-        return np.array([self._pitch, self._roll, self._yaw])
+        return np.array([self._roll, self._pitch, self._yaw])
 
     def _update_euler_angle(self, msg):
         self._roll = msg.roll
@@ -168,8 +168,8 @@ class Drone:
 
     @property
     def gyro_raw(self):
-        """Return angular velocity ENU frame"""
-        return np.array([self._gyro_y, self._gyro_x, self._gyro_z])
+        """Return angular velocity NED frame"""
+        return np.array([self._gyro_x, self._gyro_y, self._gyro_z])
 
     def _update_gyro_raw(self, msg):
         self._gyro_x = msg.x

@@ -113,7 +113,7 @@ class BackyardFlyer(Drone):
 
     def calculate_box(self):
         print("Setting Home")
-        local_waypoints = [[0.0, 10.0, 3.0], [10.0, 10.0, 3.0], [10.0, 0.0, 3.0], [0.0, 0.0, 3.0]]
+        local_waypoints = [[10.0, 0.0, 3.0], [10.0, 10.0, 3.0], [0.0, 10.0, 3.0], [0.0, 0.0, 3.0]]
         return local_waypoints
 
     def arming_transition(self):
@@ -174,5 +174,6 @@ class BackyardFlyer(Drone):
 
 if __name__ == "__main__":
     drone = BackyardFlyer(threaded=False)
+    print("Sleeping")
     time.sleep(3)
     drone.start()
