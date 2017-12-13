@@ -120,7 +120,7 @@ class BackyardFlyer(Drone):
         print("arming transition")
         self.take_control()
         self.arm()
-        self.set_home_position(self.global_position[0], self.global_position[1], self.global_position[2])
+        #self.set_home_position(self.global_position[0], self.global_position[1], self.global_position[2])
 
         self.flight_state = States.ARMING
 
