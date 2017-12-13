@@ -45,7 +45,7 @@ class Drone:
         self._guided = False
         self._connected = False
 
-        # Euler angles in degrees defined in 3-2-1 rotation
+        # Euler angles in radians
         self._roll = 0.0
         self._pitch = 0.0
         self._yaw = 0.0
@@ -75,12 +75,8 @@ class Drone:
             mt.MSG_EULER_ANGLES: self._update_euler_angle
         }
 
-        #self.conn.add_message_listener('*',self.on_message_receive)
-
         self._message_listeners = {}
-
         self.callbacks()
-
         self.tlog = logger.Logger("Logs", "TLog.txt")
 
     @property
@@ -172,7 +168,8 @@ class Drone:
 
     @property
     def gyro_raw(self):
-        return np.array([self._gryo_x, self._gyro_z, self._gyro_y])
+        """Return angular velocity ENU frame"""
+        return np.array([self._gyro_y, self._gyro_x, self._gyro_z])
 
     def _update_gyro_raw(self, msg):
         self._gyro_x = msg.x
@@ -320,7 +317,7 @@ class Drone:
     def connect(self):
         ''' Conect to the specified device'''
         self.connection.start()
-        while self.connected == False:
+        while not self.connected:
             pass
         print("Connected to the Drone!")
 

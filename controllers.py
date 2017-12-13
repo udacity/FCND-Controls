@@ -9,6 +9,9 @@ components:
 import numpy as np
 import time
 
+DRONE_MASS_KG = 2
+GRAVITY = -9.81
+
 
 class PDController(object):
 
@@ -17,16 +20,15 @@ class PDController(object):
         move_speed=15,
         turn_speed=2,
         max_tilt=0.5,
-        max_ascent_rate=1.5,
+        max_ascent_rate=3,
         max_descent_rate=1,
-        dt=0.25,
         Kp_hdot=10,
         Kp_yaw=6.5,
         Kp_r=20,
         Kp_roll=6.5,
-        Kp_p=10,
+        Kp_q=20,
         Kp_pitch=6.5,
-        Kp_q=10,
+        Kp_p=20,
         Kp_pos=0.10,
         Kp_vel=0.3,
         Kd_vel=0,
@@ -52,15 +54,15 @@ class PDController(object):
         self.Ki_hdot = Ki_hdot
         self.last_vel_error_body = np.float32([0, 0, 0])
         self.time_since_last_update = time.time()
+        self.hdot_int = 0
 
-    # def update(self, local_position, target_position, euler_angles, local_velocity, angular_velocity):
-    def update(self, local_position, target_position, euler_angles, local_velocity):
+    def update(self, local_position, target_position, euler_angles, local_velocity, angular_velocity):
         """
-        local_position - 3-element numpy array (ENU frame), current position
-        target_position - 3-element numpy array (ENU frame), target position
-        euler_angles - 3-element numpy array (pitch, roll, yaw) ENU frame (radians)
-        body_velocity - 3-element numpy array (ENU frame)
-        angular_velocity 3-element numpy array (ENU frame)
+        local_position: 3-element numpy array (ENU frame), current position
+        target_position: 3-element numpy array (ENU frame), target position
+        euler_angles: 3-element numpy array (pitch, roll, yaw in radians) ENU frame
+        body_velocity: 3-element numpy array (ENU frame)
+        angular_velocity: 3-element numpy array (ENU frame)
         """
         now = time.time()
         self.dt = now - self.time_since_last_update
@@ -71,10 +73,10 @@ class PDController(object):
         yaw = euler_angles[2]
 
         position_err = target_position - local_position
-        print('local position', local_position)
-        print('target position', target_position)
-        print('position error', position_err)
-        print('euler angles', np.degrees(euler_angles))
+        # print('local position', local_position)
+        # print('target position', target_position)
+        # print('position error', position_err)
+        # print('euler angles', np.degrees(euler_angles))
 
         vel_cmd_local = np.float32([0, 0, 0])
         # deadband position error
@@ -109,37 +111,37 @@ class PDController(object):
             pitch_rate = self.max_tilt * pitch_rate / angle_magnitude
             roll_rate = self.max_tilt * roll_rate / angle_magnitude
 
-
+        # return thrust, pitch_rate, yaw_rate, roll_rate
         # # TODO: implement 2nd half to this
         # # assume stabilization
         # # inner control loop
 
-        # # thrust_nom = -1 * controller.rb.mass * Physics.gravity[1]
-        # hDotError = 0
-        # if thrust > 0:
-        #     hDotError = (self.max_ascent_rate * thrust - 1 * local_vel[1])
-        # else:
-        #     hDotError = (self.max_descent_rate * thrust - 1 * local_vel[1])
-        # hDotInt = hDotInt + hDotError * self.dt
+        thrust_nom = -DRONE_MASS_KG * GRAVITY
+        hdot_error = 0
+        if thrust > 0:
+            hdot_error = self.max_ascent_rate * thrust - local_velocity[2]
+        else:
+            hdot_error = self.max_descent_rate * thrust - local_velocity[2]
+        self.hdot_int += hdot_error * self.dt
+        # self.hdot_int += 0
 
-        # # hdot to thrust
-        # thrust = (self.Kp_hdot * hDotError + self.Ki_hdot * hDotInt + thrust_nom) / (np.cos(pitch) * np.cos(roll))
+        # hdot to thrust
+        thrust = (self.Kp_hdot * hdot_error + self.Ki_hdot * self.hdot_int + thrust_nom) / (np.cos(pitch) * np.cos(roll))
 
-        # # yaw rate to yaw moment
-        # yaw_moment = self.Kp_r * (self.turn_speed * yaw_rate - qrp.y)
+        # yaw rate to yaw moment
+        yaw_moment = self.Kp_r * (self.turn_speed * yaw_rate - angular_velocity[2])
 
-        # # angle to angular rate command (for pitch and roll)
-        # pitch_error = pitch_rate - pitch
-        # roll_error = roll_rate - roll
-        # pitch_rate_error = self.Kp_pitch * pitch_error - qrp.x
-        # roll_rate_error = self.Kp_roll * roll_error - qrp.z
+        # angle to angular rate command (for pitch and roll)
+        pitch_error = pitch_rate - pitch
+        roll_error = roll_rate - roll
+        pitch_rate_error = self.Kp_pitch * pitch_error - angular_velocity[0]
+        roll_rate_error = self.Kp_roll * roll_error - angular_velocity[1]
 
-        # # angular rate to moment (pitch and roll)
-        # pitch_moment = self.Kp_q * pitch_rate_error
-        # roll_moment = self.Kp_p * roll_rate_error
+        # angular rate to moment (pitch and roll)
+        pitch_moment = self.Kp_q * pitch_rate_error
+        roll_moment = self.Kp_p * roll_rate_error
 
-        print('throttle, pitch rate, yaw rate, roll rate', thrust, pitch_rate, yaw_rate, roll_rate)
-        print('dt = ', self.dt)
-        print()
-        return thrust, pitch_rate, yaw_rate, roll_rate
-        # return thrust, pitch_moment, yaw_moment, roll_moment
+        # print('thrust, pitch rate, yaw rate, roll rate', thrust, pitch_rate, yaw_rate, roll_rate)
+        # print('dt = ', self.dt)
+        # print()
+        return thrust, pitch_moment, yaw_moment, roll_moment

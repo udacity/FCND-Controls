@@ -172,9 +172,9 @@ class BodyFrameMessage(Message):
     message to carry information in a body frame
     
     Attributes:
-        _x: x value
-        _y: y value
-        _z: z value
+        _x: x-axis value
+        _y: y-axis value
+        _z: z-axis value
     """
 
     def __init__(self, timestamp, x, y, z):

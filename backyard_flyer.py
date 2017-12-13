@@ -28,7 +28,6 @@ class BackyardFlyer(Drone):
         super().__init__(**kwargs)
         self.controller = PDController()
         self.target_position = np.array([0.0, 0.0, 0.0])
-        #self.global_home = np.array([0.0,0.0,0.0])  # can't set this here, no setter for this property
         self.all_waypoints = []
         self.in_mission = True
         self.check_state = {}
@@ -41,7 +40,7 @@ class BackyardFlyer(Drone):
         if self.local_position[0] > 1e6 or self.local_position[1] > 1e6:
             return
         thrust, pitch_rate, yaw_rate, roll_rate = self.controller.update(
-            self.local_position, self.target_position, self.euler_angles, self.local_velocity
+            self.local_position, self.target_position, self.euler_angles, self.local_velocity, self.gyro_raw
         )
         self.cmd_attitude_rate(roll_rate, pitch_rate, yaw_rate, thrust)
 
@@ -127,7 +126,6 @@ class BackyardFlyer(Drone):
 
     def takeoff_transition(self):
         print("takeoff transition")
-        #self.global_home = np.copy(self.global_position)  # can't write to this variable!
         target_altitude = 3.0
         self.target_position[2] = target_altitude
         self.takeoff(target_altitude)
@@ -160,15 +158,15 @@ class BackyardFlyer(Drone):
     def start(self):
 
         self.start_log("Logs", "NavLog.txt")
-        #self.connect()
+        # self.connect()
 
         print("starting connection")
-        #self.connection.start()
+        # self.connection.start()
 
         super().start()
 
-        #Only required if they do threaded
-        #while self.in_mission:
+        # Only required if they do threaded
+        # while self.in_mission:
         #    pass
 
         self.stop_log()

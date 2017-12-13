@@ -99,7 +99,7 @@ class MavlinkConnection(connection.Connection):
             # if we haven't heard a message in a given amount of time
             # send a termination message
             if current_time - last_msg_time > self._timeout:
-                #print("timeout too long!")
+                # print("timeout too long!")
                 # notify listeners that the connection is closing
                 self.notify_message_listeners(mt.MSG_CONNECTION_CLOSED, 0)
 
@@ -196,8 +196,12 @@ class MavlinkConnection(connection.Connection):
                 # TODO: check if mask notifies us to ignore a field
                 mask = msg.type_mask
                 quat = msg.q
+
                 fm = mt.FrameMessage(timestamp, quat[0], quat[1], quat[2], quat[3])
                 self.notify_message_listeners(mt.MSG_EULER_ANGLES, fm)
+
+                gyro = mt.BodyFrameMessage(timestamp, msg.body_roll_rate, msg.body_pitch_rate, msg.body_yaw_rate)
+                self.notify_message_listeners(mt.MSG_RAW_GYROSCOPE, gyro)
 
             #elif msg.get_type() == 'POSITION_TARGET_LOCAL_NED':
             # DEBUG
@@ -305,7 +309,7 @@ class MavlinkConnection(connection.Connection):
         mask = 0b00000001
         # TODO: convert the angular rates to a quaternion
         q = [0, 0, 0, 0]
-        collective_thrust = np.clip(collective_thrust, -1, 1)
+        # collective_thrust = np.clip(collective_thrust, -1, 1)
         self._master.mav.set_attitude_target_send(
             time_boot_ms, self._target_system, self._target_component, mask, q, roll_rate, pitch_rate, yaw_rate,
             collective_thrust
