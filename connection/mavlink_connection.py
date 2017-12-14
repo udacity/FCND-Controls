@@ -309,7 +309,10 @@ class MavlinkConnection(connection.Connection):
         mask = 0b00000001
         # TODO: convert the angular rates to a quaternion
         q = [0, 0, 0, 0]
-        # collective_thrust = np.clip(collective_thrust, -1, 1)
+        collective_thrust = np.clip(collective_thrust, -1, 1)
+        yaw_rate = np.clip(yaw_rate, -1, 1)
+        roll_rate = np.clip(roll_rate, -1, 1)
+        pitch_rate = np.clip(pitch_rate, -1, 1)
         self._master.mav.set_attitude_target_send(
             time_boot_ms, self._target_system, self._target_component, mask, q, roll_rate, pitch_rate, yaw_rate,
             collective_thrust

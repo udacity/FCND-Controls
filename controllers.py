@@ -114,39 +114,4 @@ class PDController(object):
             pitch_rate = self.max_tilt * pitch_rate / angle_magnitude
             roll_rate = self.max_tilt * roll_rate / angle_magnitude
 
-
-        # # TODO: implement 2nd half to this
-        # # assume stabilization
-        # # inner control loop
-
-        thrust_nom = -DRONE_MASS_KG * GRAVITY
-        hdot_error = 0
-        if thrust > 0:
-            hdot_error = self.max_ascent_rate * thrust - local_velocity[2]
-        else:
-            hdot_error = self.max_descent_rate * thrust - local_velocity[2]
-        self.hdot_int += hdot_error * self.dt
-        # self.hdot_int += 0
-
-        # hdot to thrust
-        thrust = (self.Kp_hdot * hdot_error + self.Ki_hdot * self.hdot_int + thrust_nom) / (np.cos(pitch) * np.cos(roll))
-
-        print('thrust, pitch rate, yaw rate, roll rate', thrust, pitch_rate, yaw_rate, roll_rate)
-        print('dt = ', self.dt)
-        print()
         return thrust, pitch_rate, yaw_rate, roll_rate
-
-        # yaw rate to yaw moment
-        yaw_moment = self.Kp_r * (self.turn_speed * yaw_rate - angular_velocity[2])
-
-        # angle to angular rate command (for pitch and roll)
-        pitch_error = pitch_rate - pitch
-        roll_error = roll_rate - roll
-        pitch_rate_error = self.Kp_pitch * pitch_error - angular_velocity[0]
-        roll_rate_error = self.Kp_roll * roll_error - angular_velocity[1]
-
-        # angular rate to moment (pitch and roll)
-        pitch_moment = self.Kp_q * pitch_rate_error
-        roll_moment = self.Kp_p * roll_rate_error
-
-        return thrust, pitch_moment, yaw_moment, roll_moment
