@@ -1,16 +1,12 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Tue Oct 24 16:17:28 2017
-
-@author: steve
-"""
-
-from drone import Drone
-from enum import Enum
-from connection import message_types as mt
-from controllers import PDController
-import numpy as np
 import time
+from enum import Enum
+
+import numpy as np
+
+from controller import PDController
+from udacidrone import Drone
+from udacidrone.connection import MavlinkConnection
+from udacidrone.messaging import MsgID
 
 
 class States(Enum):
@@ -24,10 +20,11 @@ class States(Enum):
 
 class BackyardFlyer(Drone):
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, connection):
+        super().__init__(connection)
         self.controller = PDController()
         self.target_position = np.array([0.0, 0.0, 0.0])
+        # self.global_home = np.array([0.0,0.0,0.0])  # can't set this here, no setter for this property
         self.all_waypoints = []
         self.in_mission = True
         self.check_state = {}
@@ -35,97 +32,73 @@ class BackyardFlyer(Drone):
         # initial state
         self.flight_state = States.MANUAL
 
+        self.register_callback(MsgID.ATTITUDE, self.attitude_callback)
+        self.register_callback(MsgID.LOCAL_POSITION, self.local_position_callback)
+        self.register_callback(MsgID.LOCAL_VELOCITY, self.velocity_callback)
+        self.register_callback(MsgID.STATE, self.state_callback)
+
     def use_controller(self):
-        # avoids bug where local position is still global position
-        if self.local_position[0] > 1e6 or self.local_position[1] > 1e6:
-            return
-        thrust, pitch_rate, yaw_rate, roll_rate = self.controller.update(
-            self.local_position, self.target_position, self.euler_angles, self.local_velocity, self.gyro_raw
+        velocity_cmd = self.controller.position_loop(
+            self.target_position, self.local_position, self.controller.Kp_pos, self.controller.Kp_alt
         )
-        self.cmd_attitude_rate(roll_rate, pitch_rate, yaw_rate, thrust)
 
-    def callbacks(self):
-        """ Define your callbacks within here"""
-        super().callbacks()
+        attitude_cmd = self.controller.velocity_loop(
+            velocity_cmd, self.local_velocity, self.attitude[2] * 180.0 / np.pi, self.controller.Kp_vel
+        )
+        print("Velocity command", velocity_cmd)
+        print("Attitude command", attitude_cmd)
+        self.cmd_attitude_rate(attitude_cmd[0], attitude_cmd[1], 0.0, velocity_cmd[2])
 
-        # TODO: Change this msg ?
-        @self.msg_callback(mt.MSG_EULER_ANGLES)
-        def hil_state_callback(msg_name, msg):
-            if self.flight_state == States.TAKEOFF or self.flight_state == States.WAYPOINT or self.flight_state == States.LANDING:
-                self.use_controller()
+    def attitude_callback(self):
+        if self.flight_state == States.TAKEOFF or self.flight_state == States.WAYPOINT or self.flight_state == States.LANDING:
+            self.use_controller()
 
-        @self.msg_callback(mt.MSG_LOCAL_POSITION)
-        def local_position_callback(msg_name, msg):
-            if self.flight_state == States.MANUAL:
-                pass
-            elif self.flight_state == States.ARMING:
-                pass
-            elif self.flight_state == States.TAKEOFF:
-                if -1.0 * msg.down > 0.95 * self.target_position[2]:
-                    self.all_waypoints = self.calculate_box()
+    def local_position_callback(self):
+        if self.flight_state == States.TAKEOFF:
+            if -1.0 * self.local_position[2] > 0.95 * self.target_position[2]:
+                self.all_waypoints = self.calculate_box()
+                self.waypoint_transition()
+        elif self.flight_state == States.WAYPOINT:
+            if np.linalg.norm(self.target_position[0:2] - self.local_position[0:2]) < 1.0:
+                if len(self.all_waypoints) > 0:
                     self.waypoint_transition()
-            elif self.flight_state == States.WAYPOINT:
-                if np.linalg.norm(self.target_position[0:2] - self.local_position[0:2]) < 1.0:
-                    if len(self.all_waypoints) > 0:
-                        self.waypoint_transition()
-                    else:
-                        self.landing_transition()
-            elif self.flight_state == States.LANDING:
-                pass
-            elif self.flight_state == States.DISARMING:
-                pass
+                else:
+                    self.landing_transition()
 
-        @self.msg_callback(mt.MSG_VELOCITY)
-        def velocity_callback(msg_name, msg):
+    def velocity_callback(self):
+        if self.flight_state == States.LANDING:
+            if self.global_position[2] - self.global_home[2] < 0.1:
+                if abs(self.local_position[2]) < 0.01:
+                    self.disarming_transition()
+
+    def state_callback(self):
+        if self.in_mission:
             if self.flight_state == States.MANUAL:
-                pass
+                self.arming_transition()
             elif self.flight_state == States.ARMING:
-                pass
-            elif self.flight_state == States.TAKEOFF:
-                pass
-            elif self.flight_state == States.WAYPOINT:
-                pass
-            elif self.flight_state == States.LANDING:
-                if self.global_position[2] - self.global_home[2] < 0.1:
-                    if abs(msg.down) < 0.01:
-                        self.disarming_transition()
+                if self.armed:
+                    self.takeoff_transition()
             elif self.flight_state == States.DISARMING:
-                pass
-
-        @self.msg_callback(mt.MSG_STATE)
-        def state_callback(msg_name, msg):
-            if self.in_mission:
-                if self.flight_state == States.MANUAL:
-                    self.arming_transition()
-                elif self.flight_state == States.ARMING:
-                    if msg.armed:
-                        self.takeoff_transition()
-
-                elif self.flight_state == States.TAKEOFF:
-                    pass
-                elif self.flight_state == States.WAYPOINT:
-                    pass
-                elif self.flight_state == States.LANDING:
-                    pass
-                elif self.flight_state == States.DISARMING:
-                    if not msg.armed:
-                        self.manual_transition()
+                if not self.armed:
+                    self.manual_transition()
 
     def calculate_box(self):
         print("Setting Home")
-        local_waypoints = [[0.0, 10.0, 3.0], [10.0, 10.0, 3.0], [10.0, 0.0, 3.0], [0.0, 0.0, 3.0]]
+        local_waypoints = [[10.0, 0.0, 3.0], [10.0, 10.0, 3.0], [0.0, 10.0, 3.0], [0.0, 0.0, 3.0]]
         return local_waypoints
 
     def arming_transition(self):
         print("arming transition")
         self.take_control()
         self.arm()
-        #self.set_home_position(self.global_position[0], self.global_position[1], self.global_position[2])
+        self.set_home_position(self.global_position[0], self.global_position[1],
+                               self.global_position[2])  # set the current location to be the home position
 
         self.flight_state = States.ARMING
 
     def takeoff_transition(self):
         print("takeoff transition")
+        # self.global_home = np.copy(self.global_position)  # can't write to this variable!
         target_altitude = 3.0
         self.target_position[2] = target_altitude
         self.takeoff(target_altitude)
@@ -134,12 +107,12 @@ class BackyardFlyer(Drone):
     def waypoint_transition(self):
         print("waypoint transition")
         self.target_position = self.all_waypoints.pop(0)
+        print('target position', self.target_position)
         self.cmd_position(self.target_position[0], self.target_position[1], self.target_position[2], 0.0)
         self.flight_state = States.WAYPOINT
 
     def landing_transition(self):
         print("landing transition")
-        self.target_position[2] = 0
         self.land()
         self.flight_state = States.LANDING
 
@@ -173,6 +146,7 @@ class BackyardFlyer(Drone):
 
 
 if __name__ == "__main__":
-    drone = BackyardFlyer(threaded=False)
-    time.sleep(3)
+    conn = MavlinkConnection('tcp:127.0.0.1:5760', threaded=False, PX4=False)
+    drone = BackyardFlyer(conn)
+    time.sleep(2)
     drone.start()
