@@ -38,23 +38,28 @@ class BackyardFlyer(Drone):
         self.register_callback(MsgID.STATE, self.state_callback)
 
     def use_controller(self):
-        velocity_cmd = self.controller.position_loop(
-            self.target_position, self.local_position, self.controller.Kp_pos, self.controller.Kp_alt
-        )
-
-        attitude_cmd = self.controller.velocity_loop(
-            velocity_cmd, self.local_velocity, self.attitude[2] * 180.0 / np.pi, self.controller.Kp_vel
-        )
+        
+        position_error = self.target_position-self.local_position
+        if np.sqrt(position_error[0]*position_error[0]+position_error[1]*position_error[1])>1.0:
+            Kp_pos = self.controller.Kp_pos
+        else:
+            Kp_pos = self.controller.Kp_pos2
+        velocity_cmd = self.controller.position_loop(self.target_position,self.local_position,Kp_pos,self.controller.Kp_alt)
+        attitude_cmd = self.controller.velocity_loop(velocity_cmd,self.local_velocity,self.attitude[2],self.controller.Kp_vel)
+        self.cmd_attitude(attitude_cmd[0],attitude_cmd[1],0.0,velocity_cmd[2])
+                
         print("Velocity command", velocity_cmd)
         print("Attitude command", attitude_cmd)
-        self.cmd_attitude_rate(attitude_cmd[0], attitude_cmd[1], 0.0, velocity_cmd[2])
-
+        
+        self.cmd_attitude(attitude_cmd[0], attitude_cmd[1], 0.0, -velocity_cmd[2])
+        #self.cmd_attitude(0.0,0.0,0.0,-velocity_cmd[2])
     def attitude_callback(self):
-        if self.flight_state == States.TAKEOFF or self.flight_state == States.WAYPOINT or self.flight_state == States.LANDING:
+        if self.flight_state == States.WAYPOINT:
             self.use_controller()
 
     def local_position_callback(self):
         if self.flight_state == States.TAKEOFF:
+            print("Local position",self.local_position[2])
             if -1.0 * self.local_position[2] > 0.95 * self.target_position[2]:
                 self.all_waypoints = self.calculate_box()
                 self.waypoint_transition()
@@ -80,11 +85,12 @@ class BackyardFlyer(Drone):
                     self.takeoff_transition()
             elif self.flight_state == States.DISARMING:
                 if not self.armed:
-                    self.manual_transition()
+                    if not self.guided:
+                        self.manual_transition()
 
     def calculate_box(self):
         print("Setting Home")
-        local_waypoints = [[10.0, 0.0, 3.0], [10.0, 10.0, 3.0], [0.0, 10.0, 3.0], [0.0, 0.0, 3.0]]
+        local_waypoints = [[10.0, 0.0, -3.0], [10.0, 10.0, -3.0], [0.0, 10.0, -3.0], [0.0, 0.0, -3.0]]
         return local_waypoints
 
     def arming_transition(self):
@@ -108,7 +114,7 @@ class BackyardFlyer(Drone):
         print("waypoint transition")
         self.target_position = self.all_waypoints.pop(0)
         print('target position', self.target_position)
-        self.cmd_position(self.target_position[0], self.target_position[1], self.target_position[2], 0.0)
+        #self.cmd_position(self.target_position[0], self.target_position[1], self.target_position[2], 0.0)
         self.flight_state = States.WAYPOINT
 
     def landing_transition(self):
@@ -119,11 +125,12 @@ class BackyardFlyer(Drone):
     def disarming_transition(self):
         print("disarm transition")
         self.disarm()
+        self.release_control()
         self.flight_state = States.DISARMING
 
     def manual_transition(self):
         print("manual transition")
-        self.release_control()
+        
         self.stop()
         self.in_mission = False
         self.flight_state = States.MANUAL
