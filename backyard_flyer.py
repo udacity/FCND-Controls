@@ -21,9 +21,17 @@ class States(Enum):
 class BackyardFlyer(Drone):
 
     def __init__(self, connection):
+        self.prev_time = 0.0
+        self.total_commands = 0.0
+        
+        self.prev_time2 = 0.0
+        self.total_commands2 = 0.0
+        
         super().__init__(connection)
         self.controller = PDController()
         self.target_position = np.array([0.0, 0.0, 0.0])
+        self.target_velocity = np.array([0.0,0.0,0.0])
+        self.target_attitude = np.array([0.0, 0.0, 0.0])
         # self.global_home = np.array([0.0,0.0,0.0])  # can't set this here, no setter for this property
         self.all_waypoints = []
         self.in_mission = True
@@ -37,25 +45,57 @@ class BackyardFlyer(Drone):
         self.register_callback(MsgID.LOCAL_VELOCITY, self.velocity_callback)
         self.register_callback(MsgID.STATE, self.state_callback)
 
-    def use_controller(self):
+
+    def position_controller(self):
+        start_time = time.clock()
         
         position_error = self.target_position-self.local_position
         if np.sqrt(position_error[0]*position_error[0]+position_error[1]*position_error[1])>1.0:
             Kp_pos = self.controller.Kp_pos
         else:
             Kp_pos = self.controller.Kp_pos2
-        velocity_cmd = self.controller.position_loop(self.target_position,self.local_position,Kp_pos,self.controller.Kp_alt)
-        attitude_cmd = self.controller.velocity_loop(velocity_cmd,self.local_velocity,self.attitude[2],self.controller.Kp_vel)
-        self.cmd_attitude(attitude_cmd[0],attitude_cmd[1],0.0,velocity_cmd[2])
-                
-        print("Velocity command", velocity_cmd)
-        print("Attitude command", attitude_cmd)
+        self.target_velocity = self.controller.position_loop(self.target_position,self.local_position,Kp_pos,self.controller.Kp_alt)
+        self.target_attitude = self.controller.velocity_loop(self.target_velocity,self.local_velocity,self.attitude[2],self.controller.Kp_vel)
         
-        self.cmd_attitude(attitude_cmd[0], attitude_cmd[1], 0.0, -velocity_cmd[2])
-        #self.cmd_attitude(0.0,0.0,0.0,-velocity_cmd[2])
+        
+        
+        
+        #TEMP to measure frequency
+        curr_time = time.clock()
+        self.total_commands2 = self.total_commands2+1
+        if(curr_time-self.prev_time2>2.0):
+            print("Position Freq: ",self.total_commands2/(curr_time-self.prev_time2))
+            self.prev_time2 = curr_time
+            self.total_commands2 = 0.0
+            print("Position Calc Time: ",curr_time-start_time)
+            
+            
+    def attitude_controller(self):
+        start_time = time.clock()        
+        
+        rate_cmd = self.controller.roll_pitch_loop(self.target_attitude,self.attitude)
+        thrust_cmd = self.controller.vertical_velocity_control(-self.target_velocity[2],self.attitude,-self.local_velocity[2])
+        roll_cmd = self.controller.angular_rate_loop(rate_cmd[0],self.gyro_raw[0],self.controller.Kp_p)
+        pitch_cmd = self.controller.angular_rate_loop(rate_cmd[1],self.gyro_raw[1],self.controller.Kp_q)
+        
+        yawrate_cmd = self.controller.angle_loop(self.target_attitude[2],self.attitude[2],self.controller.Kp_yaw)
+        yaw_cmd = self.controller.angular_rate_loop(yawrate_cmd,self.gyro_raw[2],1.0)
+
+        self.cmd_attitude_rate(roll_cmd,pitch_cmd,yaw_cmd,thrust_cmd)
+        
+        #TEMP to measure frequency
+        curr_time = time.clock()
+        self.total_commands = self.total_commands+1
+        if(curr_time-self.prev_time>2.0):
+            print("Attitude Freq: ",self.total_commands/(curr_time-self.prev_time))
+            self.prev_time = curr_time
+            self.total_commands = 0.0
+            print("Attitude Calc Time: ",curr_time-start_time)
+            
+        
     def attitude_callback(self):
         if self.flight_state == States.WAYPOINT:
-            self.use_controller()
+            self.attitude_controller()
 
     def local_position_callback(self):
         if self.flight_state == States.TAKEOFF:
@@ -64,11 +104,13 @@ class BackyardFlyer(Drone):
                 self.all_waypoints = self.calculate_box()
                 self.waypoint_transition()
         elif self.flight_state == States.WAYPOINT:
+            self.position_controller()
             if np.linalg.norm(self.target_position[0:2] - self.local_position[0:2]) < 1.0:
                 if len(self.all_waypoints) > 0:
                     self.waypoint_transition()
                 else:
-                    self.landing_transition()
+                    if np.linalg.norm(self.local_velocity[0:2]) < 1.0:
+                        self.landing_transition()
 
     def velocity_callback(self):
         if self.flight_state == States.LANDING:

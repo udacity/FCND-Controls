@@ -22,19 +22,19 @@ class PDController(object):
         max_tilt=0.5,
         max_ascent_rate=3,
         max_descent_rate=1,
-        Kp_hdot=10,
+        Kp_hdot=5,
         Kp_yaw=6.5,
         Kp_r=20,
         Kp_roll=6.5,
-        Kp_q=20,
+        Kp_q=10,
         Kp_pitch=6.5,
-        Kp_p=20,
+        Kp_p=10,
         Kp_pos=1.0,#2.0,#0.10,
         Kp_pos2=0.4,
         Kp_vel=0.1,
         Kd_vel=0,
         Kp_alt=10.0,
-        Ki_hdot=0.1
+        Ki_hdot=0.05,#0.1
     ):
         self.max_speed = max_speed
         self.turn_speed = turn_speed
