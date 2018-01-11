@@ -251,41 +251,15 @@ class PDController(object):
             target_attitude[1] = self.max_tilt * target_attitude[1] / angle_magnitude
             target_attitude[0] = self.max_tilt * target_attitude[0] / angle_magnitude
         
-        #Roll controller
-        roll = attitude[0]
-        target_roll = target_attitude[0]
-        target_roll = np.mod(target_roll,2.0*np.pi)
+        R = self.euler2RM(attitude[0],attitude[1],0.0)
+        Rd = self.euler2RM(target_attitude[0],target_attitude[1],0.0)
         
-        # angle to angular rate command (for pitch and roll)
-        roll_error = target_roll - roll
+        p_cmd = (1/R[2,2])*(R[1,0]*self.Kp_roll*(R[0,2]-Rd[0,2])-R[0,0]*self.Kp_pitch*(R[1,2]-Rd[1,2]))
+        q_cmd = (1/R[2,2])*(R[1,1]*self.Kp_roll*(R[0,2]-Rd[0,2])-R[0,1]*self.Kp_pitch*(R[1,2]-Rd[1,2]))
         
-        
-        if(roll_error>np.pi):
-            roll_error = roll_error-2.0*np.pi
-        elif(roll_error<-np.pi):
-            roll_error = roll_error+2.0*np.pi
-        
-        target_rollrate = self.Kp_roll * roll_error
+        return [p_cmd,q_cmd]
+    
 
-
-        
-        
-        pitch = attitude[1]
-        target_pitch = target_attitude[1]
-        target_pitch = np.mod(target_pitch,2.0*np.pi)
-        
-        # angle to angular rate command (for pitch and roll)
-        pitch_error = target_pitch - pitch
-        
-        
-        if(pitch_error>np.pi):
-            pitch_error = pitch_error-2.0*np.pi
-        elif(pitch_error<-np.pi):
-            pitch_error = pitch_error+2.0*np.pi
-        
-        target_pitchrate = self.Kp_pitch * pitch_error
-
-        return target_rollrate, target_pitchrate
     
     def angle_loop(self,target_angle,angle,Kp_angle):
         angle_error = target_angle-angle
@@ -348,6 +322,31 @@ class PDController(object):
             roll_cmd = -0.9*np.pi/2.0
         attitude_cmd = np.array([roll_cmd,pitch_cmd,0.0])
         return attitude_cmd
+    
+    def euler2RM(self,roll,pitch,yaw):
+        R = np.array([[0.0,0.0,0.0],[0.0,0.0,0.0],[0.0,0.0,0.0]])
+        cr = np.cos(roll)
+        sr = np.sin(roll)
+        
+        cp = np.cos(pitch)
+        sp = np.sin(pitch)
+        
+        cy = np.cos(yaw)
+        sy = np.sin(yaw)
+        
+        R[0,0] = cp*cy
+        R[1,0] = -cr*sy+sr*sp*cy
+        R[2,0] = sr*sy+cr*sp*cy
+        
+        R[0,1] = cp*sy
+        R[1,1] = cr*cy+sr*sp*sy
+        R[2,1] = -sr*cy+cr*sp*sy
+        
+        R[0,2] = -sp
+        R[1,2] = sr*cp
+        R[2,2] = cr*cp
+        
+        return R
     
     
     

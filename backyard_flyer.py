@@ -27,6 +27,7 @@ class BackyardFlyer(Drone):
         self.prev_time2 = 0.0
         self.total_commands2 = 0.0
         
+        
         super().__init__(connection)
         self.controller = PDController()
         self.target_position = np.array([0.0, 0.0, 0.0])
@@ -80,7 +81,6 @@ class BackyardFlyer(Drone):
         
         yawrate_cmd = self.controller.angle_loop(self.target_attitude[2],self.attitude[2],self.controller.Kp_yaw)
         yaw_cmd = self.controller.angular_rate_loop(yawrate_cmd,self.gyro_raw[2],1.0)
-
         self.cmd_attitude_rate(roll_cmd,pitch_cmd,yaw_cmd,thrust_cmd)
         
         #TEMP to measure frequency
