@@ -20,18 +20,18 @@ class PDController(object):
         max_speed=10,
         turn_speed=2,
         max_tilt=0.5,
-        max_ascent_rate=3,
-        max_descent_rate=1,
-        Kp_hdot=5,
+        max_ascent_rate=5,
+        max_descent_rate=2,
+        Kp_hdot=5.0,
         Kp_yaw=6.5,
         Kp_r=20,
         Kp_roll=6.5,
-        Kp_q=10,
+        Kp_q=5,
         Kp_pitch=6.5,
-        Kp_p=10,
-        Kp_pos=1.0,#2.0,#0.10,
+        Kp_p=5,
+        Kp_pos=2.0,#2.0,#0.10,
         Kp_pos2=0.4,
-        Kp_vel=0.1,
+        Kp_vel=2.0,
         Kd_vel=0,
         Kp_alt=10.0,
         Ki_hdot=0.05,#0.1
@@ -246,18 +246,32 @@ class PDController(object):
         angular_velocity: 3-element array  (roll_rate, pitch_rate, yaw_rate) in radians/sec
         """
         
-        angle_magnitude = np.linalg.norm([target_attitude[0], target_attitude[1]])
-        if angle_magnitude > self.max_tilt:
-            target_attitude[1] = self.max_tilt * target_attitude[1] / angle_magnitude
-            target_attitude[0] = self.max_tilt * target_attitude[0] / angle_magnitude
-        
         R = self.euler2RM(attitude[0],attitude[1],0.0)
-        Rd = self.euler2RM(target_attitude[0],target_attitude[1],0.0)
         
-        p_cmd = (1/R[2,2])*(R[1,0]*self.Kp_roll*(R[0,2]-Rd[0,2])-R[0,0]*self.Kp_pitch*(R[1,2]-Rd[1,2]))
-        q_cmd = (1/R[2,2])*(R[1,1]*self.Kp_roll*(R[0,2]-Rd[0,2])-R[0,1]*self.Kp_pitch*(R[1,2]-Rd[1,2]))
-        
-        return [p_cmd,q_cmd]
+        thrust_cmd = target_attitude[3]/R[2,2]
+
+        if thrust_cmd > 0.0:
+            target_R13 = min(max(target_attitude[0].item()/thrust_cmd.item(),-1.0),1.0)
+            target_pitch = np.arcsin(-target_R13)
+    
+            target_R23 = min(max(target_attitude[1].item()/thrust_cmd.item(),-1.0),1.0)
+            target_roll = np.arctan2(target_R23,R[2,2])
+    
+            tilt_norm = target_roll*target_roll + target_pitch*target_pitch >self.max_tilt
+            if abs(tilt_norm) >self.max_tilt:
+                target_pitch = target_pitch*self.max_tilt/tilt_norm
+                target_roll = target_roll*self.max_tilt/tilt_norm
+                target_R13 = -np.sin(target_pitch)
+                target_R23 = np.sin(target_roll)*np.cos(target_pitch)
+            
+            
+            p_cmd = (1/R[2,2])*(R[1,0]*self.Kp_roll*(R[0,2]-target_R13)-R[0,0]*self.Kp_pitch*(R[1,2]-target_R23))
+            q_cmd = (1/R[2,2])*(R[1,1]*self.Kp_roll*(R[0,2]-target_R13)-R[0,1]*self.Kp_pitch*(R[1,2]-target_R23))
+        else:
+            p_cmd = 0.0
+            q_cmd = 0.0
+            thrust_cmd = 0.0
+        return [p_cmd,q_cmd,thrust_cmd]
     
 
     
@@ -322,6 +336,47 @@ class PDController(object):
             roll_cmd = -0.9*np.pi/2.0
         attitude_cmd = np.array([roll_cmd,pitch_cmd,0.0])
         return attitude_cmd
+    
+    def position_velocity_loop(self, position_cmd, velocity_cmd, position, velocity, attitude,
+                               ff_cmd = np.array([0.0,0.0,0.0])):
+        accel_cmd = ff_cmd + self.Kp_pos*(position_cmd-position) + self.Kp_vel*(velocity_cmd-velocity)
+        
+        #Different gains for altitude
+        hdot_cmd = -1.0*(self.Kp_alt*(position_cmd[2]-position[2])+velocity_cmd[2])
+        
+        if(hdot_cmd > self.max_ascent_rate):
+            hdot_cmd = self.max_ascent_rate
+        elif(hdot_cmd < -self.max_descent_rate):
+            hdot_cmd = -self.max_descent_rate
+        hdot = -velocity[2]
+        accel_cmd[2] = (-ff_cmd[2] + self.Kp_hdot*(hdot_cmd - hdot))
+
+        #accel_cmd[2] = -1.0*(ff_cmd[2] + self.Kp_alt*(position_cmd[2]-position[2]) + self.Kp_hdot*(velocity_cmd[2]-velocity[2]))
+        
+        #R = self.euler2RM(attitude[0],attitude[1],attitude[2])
+        
+        #thrust_cmd = accel_cmd[2]
+               
+        R_yaw = self.euler2RM(0.0,0.0,attitude[2])
+        accel_cmd_body = np.matmul(R_yaw,accel_cmd)
+        
+        return accel_cmd_body
+        #target_R13 = min(max(accel_cmd_body[0].item()/thrust_cmd.item(),-1.0),1.0)
+        #target_pitch = np.arcsin(-target_R13)
+
+        #target_R23 = min(max(accel_cmd_body[1].item()/thrust_cmd.item(),-1.0),1.0)
+        #target_roll = np.arctan2(target_R23,R[2,2])
+
+        #tilt_norm = target_roll*target_roll + target_pitch*target_pitch >self.max_tilt
+        #if abs(tilt_norm) >self.max_tilt:
+        #    target_pitch = target_pitch*self.max_tilt/tilt_norm
+        #    target_roll = target_roll*self.max_tilt/tilt_norm
+        #    target_R13 = -np.sin(target_pitch)
+        #    target_R23 = np.sin(target_roll)*np.cos(target_pitch)
+            
+            
+        #return target_R13,target_R23,thrust_cmd
+        
     
     def euler2RM(self,roll,pitch,yaw):
         R = np.array([[0.0,0.0,0.0],[0.0,0.0,0.0],[0.0,0.0,0.0]])
