@@ -3,7 +3,7 @@ from enum import Enum
 
 import numpy as np
 
-from controller import PDController, NonlinearController
+from controller import NonlinearController
 from udacidrone import Drone
 from udacidrone.connection import MavlinkConnection
 from udacidrone.messaging import MsgID
@@ -18,7 +18,7 @@ class States(Enum):
     DISARMING = 5
 
 
-class BackyardFlyer(Drone):
+class ControlsFlyer(Drone):
 
     def __init__(self, connection):
         self.prev_time = 0.0
@@ -31,6 +31,8 @@ class BackyardFlyer(Drone):
         super().__init__(connection)
         self.controller = NonlinearController()
         self.target_position = np.array([0.0, 0.0, 0.0])
+        self.prev_target_position = None
+        self.speed = 1.0
         self.target_velocity = np.array([0.0,0.0,0.0])
         self.target_attitude = np.array([0.0, 0.0, 0.0, 0.0])
         self.thrust_cmd = 0.0
@@ -51,74 +53,18 @@ class BackyardFlyer(Drone):
 
 
     def position_controller(self):
-        start_time = time.clock()
-        
-        #position_error = self.target_position-self.local_position
-        #if np.sqrt(position_error[0]*position_error[0]+position_error[1]*position_error[1])>1.0:
-        #    self.controller.Kp_pos = 10.0
-        #else:
-        #    self.controller.Kp_pos2 = 2.0
-        #self.target_velocity = self.controller.position_loop(self.target_position,self.local_position,Kp_pos,self.controller.Kp_alt)
-        #self.target_attitude = self.controller.velocity_loop(self.target_velocity,self.local_velocity,self.attitude[2],self.controller.Kp_vel)
-        #pos_cmd = self.controller.position_velocity_loop(self.target_position,np.array([0.0,0.0,0.0]),self.local_position,self.local_velocity,self.attitude,np.array([0.0,0.0,-9.81*2]))
-      
-        acceleration_cmd = self.controller.position_control(self.target_position[0:2],np.array([0.0,0.0]),self.local_position[0:2],self.local_velocity[0:2])
-        #thrust_cmd = self.controller.altitude_control(-self.target_position[2],-self.local_velocity[2],-self.local_position[2],-self.local_velocity[2],self.attitude,9.81*2.0)
+        #velocity_cmd = np.array(self.target_position[0:2]-self.prev_target_position[0:2])
+        #velocity_cmd = self.speed*velocity_cmd/np.linalg.norm(velocity_cmd)
+        velocity_cmd = np.array([0.0,0.0])
+        acceleration_cmd = self.controller.position_control(self.target_position[0:2],velocity_cmd,self.local_position[0:2],self.local_velocity[0:2])
         self.target_attitude[0] = acceleration_cmd[0]
-        self.target_attitude[1] = acceleration_cmd[1]
-        #self.target_attitude[3] = thrust_cmd[2]
-        
-        #TEMP to measure frequency
-        curr_time = time.clock()
-        self.total_commands2 = self.total_commands2+1
-        if(curr_time-self.prev_time2>2.0):
-            #print("Position Freq: ",self.total_commands2/(curr_time-self.prev_time2))
-            self.prev_time2 = curr_time
-            self.total_commands2 = 0.0
-            
-            #print("Position Calc Time: ",curr_time-start_time)
-            
+        self.target_attitude[1] = acceleration_cmd[1]            
             
     def attitude_controller(self):
-        start_time = time.clock()        
-        
         self.thrust_cmd = self.controller.altitude_control(-self.target_position[2],-self.local_velocity[2],-self.local_position[2],-self.local_velocity[2],self.attitude,9.81*2.0)
-        
         roll_pitch_rate_cmd = self.controller.roll_pitch_controller(self.target_attitude[0:2],self.attitude,self.thrust_cmd)
-        
         yawrate_cmd = self.controller.yaw_control(0.0,self.attitude[2])
-        
         self.body_rate_cmd = np.array([roll_pitch_rate_cmd[0],roll_pitch_rate_cmd[1],yawrate_cmd])
-        
-        
-        
-        
-        
-        #rate_cmd = self.controller.roll_pitch_loop(self.target_attitude,self.attitude)
-        #thrust_cmd = self.controller.vertical_velocity_control(-self.target_velocity[2],self.attitude,-self.local_velocity[2])
-
-        #thrust_cmd = rate_cmd[2]
-        #roll_cmd = self.controller.angular_rate_loop(rate_cmd[0],self.gyro_raw[0],self.controller.Kp_p)
-        #pitch_cmd = self.controller.angular_rate_loop(rate_cmd[1],self.gyro_raw[1],self.controller.Kp_q)
-        
-        #yawrate_cmd = self.controller.angle_loop(self.target_attitude[2],self.attitude[2],self.controller.Kp_yaw)
-        #yaw_cmd = self.controller.angular_rate_loop(yawrate_cmd,self.gyro_raw[2],1.0)
-        
-        #print("Thrust Cmd ", thrust_cmd)
-        #print("Rate Cmd: ", rate_cmd)
-        #print("Roll Cmd: ", roll_cmd)
-        #print("Pitch Cmd: ", pitch_cmd)
-        
-        
-        
-        #TEMP to measure frequency
-        curr_time = time.clock()
-        self.total_commands = self.total_commands+1
-        if(curr_time-self.prev_time>0.1):
-            #print("Attitude Freq: ",self.total_commands/(curr_time-self.prev_time))
-            self.prev_time = curr_time
-            self.total_commands = 0.0
-            #print("Attitude Calc Time: ",curr_time-start_time)
     
     def bodyrate_controller(self):        
         moment_cmd = self.controller.body_rate_control(self.body_rate_cmd,self.gyro_raw)
@@ -191,6 +137,12 @@ class BackyardFlyer(Drone):
 
     def waypoint_transition(self):
         print("waypoint transition")
+        if self.prev_target_position is None:
+            self.prev_target_position = self.local_position
+        else:
+            self.prev_target_position = np.array(self.target_position)
+        self.speed = self.speed*2
+            
         self.target_position = self.all_waypoints.pop(0)
         print('target position', self.target_position)
         #self.cmd_position(self.target_position[0], self.target_position[1], self.target_position[2], 0.0)
@@ -233,6 +185,6 @@ class BackyardFlyer(Drone):
 
 if __name__ == "__main__":
     conn = MavlinkConnection('tcp:127.0.0.1:5760', threaded=False, PX4=False)
-    drone = BackyardFlyer(conn)
+    drone = ControlsFlyer(conn)
     time.sleep(2)
     drone.start()
