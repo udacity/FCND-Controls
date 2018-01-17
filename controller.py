@@ -51,6 +51,43 @@ class NonlinearController(object):
         self.max_speed = max_speed
     
     
+    def trajectory_control(self,position_trajectory,yaw_trajectory,time_trajectory,current_time):
+        """Generate a commanded position, velocity and yaw based on the trajectory
+        
+        Args:
+            position_trajectory: list of 3-element numpy arrays, NED positions
+            yaw_trajectory: list yaw commands in radians
+            time_trajectory: list of times (in seconds) that correspond to the position and yaw commands
+            current_time: float corresponding to the current time in seconds
+            
+        Returns: tuple (commanded position, commanded velocity, commanded yaw)
+                
+        """
+        ind_min = np.argmin(np.abs(time_trajectory-current_time))
+        time = time_trajectory[ind_min]
+        
+        
+        if current_time > time:
+            position0 = position_trajectory[ind_min-1]
+            position1 = position_trajectory[ind_min]
+            
+            time0 = time_trajectory[ind_min-1]
+            time1 = time_trajectory[ind_min]
+            
+        else:
+            position0 = position_trajectory[ind_min]
+            position1 = position_trajectory[ind_min+1]
+            
+            time0 = time_trajectory[ind_min]
+            time1 = time_trajectory[ind_min+1]
+            
+        position_cmd = (position1-position0)*(current_time-time0)/(time1-time0)+position0
+        velocity_cmd = (position1-position0)/(time1-time0)
+        
+        #Temp: point yaw in the direction of travel
+        yaw_cmd = np.arctan2(position1[1]-position0[1],position1[0]-position0[0])
+        
+        return (position_cmd,velocity_cmd,yaw_cmd)
     
     def position_control(self, local_position_cmd, local_velocity_cmd, local_position, local_velocity,
                                acceleration_ff = np.array([0.0,0.0])):
