@@ -63,29 +63,39 @@ class NonlinearController(object):
         Returns: tuple (commanded position, commanded velocity, commanded yaw)
                 
         """
-        ind_min = np.argmin(np.abs(time_trajectory-current_time))
-        time = time_trajectory[ind_min]
+        ind_min = np.argmin(np.abs(np.array(time_trajectory)-current_time))
+        time_ref = time_trajectory[ind_min]
         
         
-        if current_time > time:
+        if current_time < time_ref:
             position0 = position_trajectory[ind_min-1]
             position1 = position_trajectory[ind_min]
             
             time0 = time_trajectory[ind_min-1]
             time1 = time_trajectory[ind_min]
+            yaw_cmd = yaw_trajectory[ind_min-1]
             
         else:
-            position0 = position_trajectory[ind_min]
-            position1 = position_trajectory[ind_min+1]
-            
-            time0 = time_trajectory[ind_min]
-            time1 = time_trajectory[ind_min+1]
+            yaw_cmd = yaw_trajectory[ind_min]
+            if ind_min >= len(position_trajectory)-1:
+                position0 = position_trajectory[ind_min]
+                position1 = position_trajectory[ind_min]
+                
+                time0 = 0.0
+                time1 = 1.0
+            else:
+
+                position0 = position_trajectory[ind_min]
+                position1 = position_trajectory[ind_min+1]
+                time0 = time_trajectory[ind_min]
+                time1 = time_trajectory[ind_min+1]
             
         position_cmd = (position1-position0)*(current_time-time0)/(time1-time0)+position0
         velocity_cmd = (position1-position0)/(time1-time0)
         
         #Temp: point yaw in the direction of travel
-        yaw_cmd = np.arctan2(position1[1]-position0[1],position1[0]-position0[0])
+        #yaw_cmd = np.arctan2(position1[1]-position0[1],position1[0]-position0[0])
+        #yaw_cmd = yaw_trajectory[ind_min]
         
         return (position_cmd,velocity_cmd,yaw_cmd)
     
@@ -141,7 +151,7 @@ class NonlinearController(object):
         thrust = acceleration_cmd/R33
         return thrust
     
-    def roll_pitch_controller(self,acceleration_cmd,attitude,thrust_cmd):
+    def roll_pitch_controller(self,acceleration_cmd,attitude,thrust_cmd,yaw_cmd=0.0):
         """ Generate the rollrate and pitchrate commands in the body frame
         
         Args:
@@ -154,25 +164,17 @@ class NonlinearController(object):
         #Calculate rotation matrix        
         R = euler2RM(attitude[0],attitude[1],attitude[2])
 
+        
+        #Tranform into the body frame
+        #acceleration_cmd[0] = acceleration_cmd[0]*R_yaw[0,0]+acceleration_cmd[1]*R_yaw[0,1]
+        #acceleration_cmd[1] = acceleration_cmd[0]*R_yaw[1,0]+acceleration_cmd[1]*R_yaw[1,1]
         #Only command if positive thrust
         if thrust_cmd > 0.0:
-            target_R13 = min(max(acceleration_cmd[0].item()/thrust_cmd.item(),-1.0),1.0)
-            target_pitch = np.arcsin(-target_R13)
-    
-            target_R23 = min(max(acceleration_cmd[1].item()/thrust_cmd.item(),-1.0),1.0)
-            target_roll = np.arctan2(target_R23,R[2,2])
-    
-            #Limit maximum tilt
-            tilt_norm = target_roll*target_roll + target_pitch*target_pitch >self.max_tilt
-            if abs(tilt_norm) >self.max_tilt:
-                target_pitch = target_pitch*self.max_tilt/tilt_norm
-                target_roll = target_roll*self.max_tilt/tilt_norm
-                target_R13 = -np.sin(target_pitch)
-                target_R23 = np.sin(target_roll)*np.cos(target_pitch)
+            target_R13 = -min(max(acceleration_cmd[0].item()/thrust_cmd.item(),-1.0),1.0)
+            target_R23 = -min(max(acceleration_cmd[1].item()/thrust_cmd.item(),-1.0),1.0)
             
-            
-            p_cmd = (1/R[2,2])*(R[1,0]*self.Kp_roll*(R[0,2]-target_R13)-R[0,0]*self.Kp_pitch*(R[1,2]-target_R23))
-            q_cmd = (1/R[2,2])*(R[1,1]*self.Kp_roll*(R[0,2]-target_R13)-R[0,1]*self.Kp_pitch*(R[1,2]-target_R23))
+            p_cmd = (1/R[2,2])*(-R[1,0]*self.Kp_roll*(R[0,2]-target_R13)+R[0,0]*self.Kp_pitch*(R[1,2]-target_R23))
+            q_cmd = (1/R[2,2])*(-R[1,1]*self.Kp_roll*(R[0,2]-target_R13)+R[0,1]*self.Kp_pitch*(R[1,2]-target_R23))
         else: #Otherwise command no rate
             p_cmd = 0.0
             q_cmd = 0.0
