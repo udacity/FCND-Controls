@@ -17,18 +17,18 @@ class NonlinearController(object):
 
     def __init__(
         self,
-        Kp_pos=5.0,
+        Kp_pos=4.0,
         Kp_vel=4.0,
         Kp_alt=10.0,
         Kp_hdot=1.0,
         
-        Kp_roll=6.5,#6.5,
-        Kp_pitch=6.5,#6.5,
-        Kp_yaw=6.5,
+        Kp_roll=5,#6.5,
+        Kp_pitch=5,#6.5,
+        Kp_yaw=4.5,
         
         Kp_p=20,#10,
         Kp_q=20,#10,
-        Kp_r=20,
+        Kp_r=18,
         
         max_tilt=0.5,
         max_ascent_rate=5,

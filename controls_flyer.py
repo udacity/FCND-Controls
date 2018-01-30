@@ -31,6 +31,7 @@ class ControlsFlyer(Drone):
         super().__init__(connection)
         self.controller = NonlinearController()
         self.target_position = np.array([0.0, 0.0, 0.0])
+        self.waypoint_number = int(0)
         self.prev_target_position = None
         self.position_trajectory = None
         self.time_trajectory = None
@@ -87,15 +88,19 @@ class ControlsFlyer(Drone):
             if -1.0 * self.local_position[2] > 0.95 * self.target_position[2]:
                 #self.all_waypoints = self.calculate_box()
                 (self.position_trajectory,self.time_trajectory,self.yaw_trajectory) = self.calculate_box_trajectory()
-                self.all_waypoints = [self.position_trajectory[-1]]
+                self.all_waypoints = self.position_trajectory.copy()#[self.position_trajectory[-1]]
+                self.waypoint_number = -1
                 self.waypoint_transition()
         elif self.flight_state == States.WAYPOINT:
             #self.position_controller()
-            if np.linalg.norm(self.target_position[0:2] - self.local_position[0:2]) < 1.0:
+            #if np.linalg.norm(self.target_position[0:2] - self.local_position[0:2]) < 1.0:
+            if time.time() > self.time_trajectory[self.waypoint_number]:
                 if len(self.all_waypoints) > 0:
+                    self.print_error()
                     self.waypoint_transition()
                 else:
                     if np.linalg.norm(self.local_velocity[0:2]) < 1.0:
+                        self.print_error()
                         self.landing_transition()
 
     def velocity_callback(self):
@@ -121,9 +126,9 @@ class ControlsFlyer(Drone):
 
     def calculate_box_trajectory(self):
         print("Calculating Box Trajectory")
-        position_trajectory = [self.local_position,np.array([10.0, 0.0, -3.0]),np.array([10.0, 10.0, -3.0]),np.array([0.0, 10.0, -3.0])]
+        position_trajectory = [self.local_position,np.array([10.0, 0.0, -3.0]),np.array([0.0, 10.0, -3.0]),np.array([10.0, 0.0, -3.0])]
         current_time = time.time()
-        time_trajectory = [current_time,current_time+5.0,current_time+8.0,current_time+20.0]
+        time_trajectory = [current_time,current_time+3.0,current_time+8.0,current_time+11.0]
         yaw_trajectory = []
         for i in range(0,len(position_trajectory)-1):
             yaw_trajectory.append(np.arctan2(position_trajectory[i+1][1]-position_trajectory[i][1],position_trajectory[i+1][0]-position_trajectory[i][0]))
@@ -134,6 +139,10 @@ class ControlsFlyer(Drone):
         print("Calculatin Box Waypoints")
         local_waypoints = [[10.0, 0.0, -3.0], [10.0, 10.0, -3.0], [0.0, 10.0, -3.0], [0.0, 0.0, -3.0]]
         return local_waypoints
+    
+    def print_error(self):
+        waypoint_error = np.linalg.norm(self.target_position-self.local_position)
+        print("Waypoint Error: ", waypoint_error)
 
     def arming_transition(self):
         print("arming transition")
@@ -154,12 +163,12 @@ class ControlsFlyer(Drone):
 
     def waypoint_transition(self):
         print("waypoint transition")
+        self.waypoint_number = self.waypoint_number+1
         if self.prev_target_position is None:
             self.prev_target_position = self.local_position
         else:
             self.prev_target_position = np.array(self.target_position)
-        self.speed = self.speed*2
-            
+                    
         self.target_position = self.all_waypoints.pop(0)
         print('target position', self.target_position)
         #self.cmd_position(self.target_position[0], self.target_position[1], self.target_position[2], 0.0)
