@@ -4,7 +4,8 @@ from enum import Enum
 import numpy as np
 
 from controller import NonlinearController
-from udacidrone import Drone
+#from udacidrone import Drone
+from unity_drone import UnityDrone
 from udacidrone.connection import MavlinkConnection
 from udacidrone.messaging import MsgID
 
@@ -18,9 +19,9 @@ class States(Enum):
     DISARMING = 5
 
 
-class ControlsFlyer(Drone):
+class ControlsFlyer(UnityDrone):
 
-    def __init__(self, connection):
+    def __init__(self, connection, tlog_name="TLog.txt"):
         self.prev_time = 0.0
         self.total_commands = 0.0
         
@@ -56,21 +57,24 @@ class ControlsFlyer(Drone):
         #velocity_cmd = np.array(self.target_position[0:2]-self.prev_target_position[0:2])
         #velocity_cmd = self.speed*velocity_cmd/np.linalg.norm(velocity_cmd)
         velocity_cmd = np.array([0.0,0.0])
+        self.local_velocity_target = np.array([0.0,0.0,0.0])
+        self.local_position_target = self.target_position
         acceleration_cmd = self.controller.position_control(self.target_position[0:2],velocity_cmd,self.local_position[0:2],self.local_velocity[0:2])
         self.target_attitude[0] = acceleration_cmd[0]
-        self.target_attitude[1] = acceleration_cmd[1]            
+        self.target_attitude[1] = acceleration_cmd[1]
+        self.local_acceleration_target = np.array([acceleration_cmd[0],acceleration_cmd[1],0.0])
             
     def attitude_controller(self):
         self.thrust_cmd = self.controller.altitude_control(-self.target_position[2],-self.local_velocity[2],-self.local_position[2],-self.local_velocity[2],self.attitude,9.81*2.0)
         roll_pitch_rate_cmd = self.controller.roll_pitch_controller(self.target_attitude[0:2],self.attitude,self.thrust_cmd)
         yawrate_cmd = self.controller.yaw_control(0.0,self.attitude[2])
         self.body_rate_cmd = np.array([roll_pitch_rate_cmd[0],roll_pitch_rate_cmd[1],yawrate_cmd])
-    
+        self.body_rate_target = self.body_rate_cmd
+        
     def bodyrate_controller(self):        
         moment_cmd = self.controller.body_rate_control(self.body_rate_cmd,self.gyro_raw)
         self.cmd_moment(moment_cmd[0],moment_cmd[1],moment_cmd[2],self.thrust_cmd)
-            
-        
+                
     def attitude_callback(self):
         if self.flight_state == States.WAYPOINT:
             self.attitude_controller()
@@ -188,3 +192,4 @@ if __name__ == "__main__":
     drone = ControlsFlyer(conn)
     time.sleep(2)
     drone.start()
+    
