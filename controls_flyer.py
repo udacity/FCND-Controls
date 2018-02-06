@@ -62,7 +62,9 @@ class ControlsFlyer(UnityDrone):
        
         acceleration_cmd = self.controller.position_control(position_cmd[0:2],velocity_cmd[0:2],self.local_position[0:2],self.local_velocity[0:2])
         self.target_attitude[0] = acceleration_cmd[0]
-		self.local_acceleration_target = np.array([acceleration_cmd[0],acceleration_cmd[1],0.0])
+        self.target_attitude[1] = acceleration_cmd[1]
+        self.target_attitude[2] = yaw_cmd
+        self.local_acceleration_target = np.array([acceleration_cmd[0],acceleration_cmd[1],0.0])
             
     def attitude_controller(self):
         self.thrust_cmd = self.controller.altitude_control(-self.target_position[2],-self.local_velocity[2],-self.local_position[2],-self.local_velocity[2],self.attitude,9.81*2.0)
