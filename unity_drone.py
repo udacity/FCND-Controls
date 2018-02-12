@@ -3,6 +3,7 @@ import traceback
 import numpy as np
 
 from udacidrone import Drone
+import time
 
 
 class UnityDrone(Drone):
@@ -38,7 +39,16 @@ class UnityDrone(Drone):
         self._target_roll_rate = 0.0
         self._target_pitch_rate = 0.0
         self._target_yaw_rate = 0.0
-        self._target_body_rate_time = 0.0   
+        self._target_body_rate_time = 0.0
+        
+        #Used for the autograder
+        self._threshold_xtrack = 2.0
+        self._threshold_time = 40.0
+        self._average_xtrack = 0.0
+        self._maximum_xtrack = 0.0
+        self._mission_time = 0.0
+        self._time0 = None
+        self._mission_success = True
 
 
     def cmd_moment(self, roll_moment, pitch_moment, yaw_moment, thrust):
@@ -70,7 +80,16 @@ class UnityDrone(Drone):
             self.connection.local_position_target(target[0], target[1], target[2], t)
         except:
             traceback.print_exec()
-    
+        
+        #Check for current xtrack error
+        if self._time0 is None:
+            self._time0 = time.clock()
+        
+        self._xtrack_error = self.calculate_xtrack_error()
+        self._mission_time = time.clock() - self._time0
+        if self._mission_success:
+            self.check_mission_success()
+            
     @property
     def local_velocity_target(self):
         return np.array([self._target_velocity_north,self._target_velocity_east,self._target_velocity_down])
@@ -133,5 +152,77 @@ class UnityDrone(Drone):
             self.connection.body_rate_target(target[0],target[1],target[2], t)
         except:
             traceback.print_exec()
+    
+    @property
+    def threshold_xtrack(self):
+        """Maximum allowed xtrack error on the mission"""
+        return self._threshold_xtrack
+    
+    @threshold_xtrack.setter
+    def threshold_xtrack(self, threshold):
+        if threshold > 0.0:
+            self._threshold_xtrack = threshold
+        else:
+            print('Xtrack threshold must be greater than 0.0')
+    
+    @property
+    def threshold_time(self):
+        """Maximum mission time"""
+        return self._threshold_time
+    
+    @threshold_time.setter
+    def threshold_time(self,threshold):
+        if threshold > 0.0:
+            self._threshold_time = threshold
+        else:
+            print('Time threshold must be greater than 0.0')
+            
+            
+    
+    def load_test_trajectory(self,time_mult=1.0):
+        """Loads the test_trajectory.txt
+        
+        Args:
+            time_mult: a multiplier to decrease the total time of the trajectory
+        
+        """
+        data  = np.loadtxt('test_trajectory.txt', delimiter=',', dtype='Float64')
+        position_trajectory = []
+        time_trajectory = []
+        yaw_trajectory = []
+        current_time = time.time()
+        for i in range(len(data[:,0])):
+            position_trajectory.append(data[i,1:4])
+            time_trajectory.append(data[i,0]*time_mult+current_time)
+        for i in range(0,len(position_trajectory)-1):
+            yaw_trajectory.append(np.arctan2(position_trajectory[i+1][1]-position_trajectory[i][1],position_trajectory[i+1][0]-position_trajectory[i][0]))
+        yaw_trajectory.append(yaw_trajectory[-1])
+        return(position_trajectory,time_trajectory,yaw_trajectory)
+    
+    def calculate_xtrack_error(self):
+        """Calcuate the error beteween the local position and target local position
+        
+        """
+        target_position = np.array([self._target_north,self._target_east,self._target_down])
+        return np.linalg.norm(target_position-self.local_position)
+    
+    def print_mission_score(self):
+        """Prints the maximum xtrack error, total time, and mission success
+
+        """
+        print('Maximum XTrack Error: ', self._maximum_xtrack)
+        print('Mission Time: ', self._mission_time)
+        print('Mission Success: ', self._mission_success)
+        
+    def check_mission_success(self):
+        """Check the mission success criterion (xtrack and time)
+        
+        """
+        if self._xtrack_error > self._maximum_xtrack:
+            self._maximum_xtrack = self._xtrack_error
+            if self._maximum_xtrack > self._threshold_xtrack:
+                self._mission_success = False
+        if self._mission_time > self._threshold_time:
+            self._mission_success = False
             
 

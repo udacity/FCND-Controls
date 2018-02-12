@@ -19,8 +19,8 @@ class NonlinearController(object):
         self,
         Kp_pos=4.0,
         Kp_vel=4.0,
-        Kp_alt=10.0,
-        Kp_hdot=1.0,
+        Kp_alt=4.0,
+        Kp_hdot=2.0,
         
         Kp_roll=5,#6.5,
         Kp_pitch=5,#6.5,

@@ -58,17 +58,21 @@ class ControlsFlyer(UnityDrone):
 
 
     def position_controller(self):
+        
+        
         (position_cmd,velocity_cmd,yaw_cmd) = self.controller.trajectory_control(self.position_trajectory,self.yaw_trajectory,self.time_trajectory,time.time())
-       
+        self.local_position_target = position_cmd
+        self.local_velocity_target = velocity_cmd
         acceleration_cmd = self.controller.position_control(position_cmd[0:2],velocity_cmd[0:2],self.local_position[0:2],self.local_velocity[0:2])
         self.target_attitude[0] = acceleration_cmd[0]
         self.target_attitude[1] = acceleration_cmd[1]
         self.target_attitude[2] = yaw_cmd
         self.local_acceleration_target = np.array([acceleration_cmd[0],acceleration_cmd[1],0.0])
-            
+        
     def attitude_controller(self):
         self.thrust_cmd = self.controller.altitude_control(-self.target_position[2],-self.local_velocity[2],-self.local_position[2],-self.local_velocity[2],self.attitude,9.81*2.0)
         roll_pitch_rate_cmd = self.controller.roll_pitch_controller(self.target_attitude[0:2],self.attitude,self.thrust_cmd,yaw_cmd=self.target_attitude[2])
+        
         yawrate_cmd = self.controller.yaw_control(self.target_attitude[2],self.attitude[2])
         self.body_rate_cmd = np.array([roll_pitch_rate_cmd[0],roll_pitch_rate_cmd[1],yawrate_cmd])
         self.body_rate_target = self.body_rate_cmd
@@ -89,7 +93,7 @@ class ControlsFlyer(UnityDrone):
         if self.flight_state == States.TAKEOFF:
             if -1.0 * self.local_position[2] > 0.95 * self.target_position[2]:
                 #self.all_waypoints = self.calculate_box()
-                (self.position_trajectory,self.time_trajectory,self.yaw_trajectory) = self.calculate_box_trajectory()
+                (self.position_trajectory,self.time_trajectory,self.yaw_trajectory) = self.load_test_trajectory(time_mult=1.0)#self.calculate_box_trajectory()
                 self.all_waypoints = self.position_trajectory.copy()#[self.position_trajectory[-1]]
                 self.waypoint_number = -1
                 self.waypoint_transition()
@@ -98,11 +102,11 @@ class ControlsFlyer(UnityDrone):
             #if np.linalg.norm(self.target_position[0:2] - self.local_position[0:2]) < 1.0:
             if time.time() > self.time_trajectory[self.waypoint_number]:
                 if len(self.all_waypoints) > 0:
-                    self.print_error()
+                    #self.print_error()
                     self.waypoint_transition()
                 else:
                     if np.linalg.norm(self.local_velocity[0:2]) < 1.0:
-                        self.print_error()
+                        #self.print_error()
                         self.landing_transition()
 
     def velocity_callback(self):
@@ -136,6 +140,7 @@ class ControlsFlyer(UnityDrone):
             yaw_trajectory.append(np.arctan2(position_trajectory[i+1][1]-position_trajectory[i][1],position_trajectory[i+1][0]-position_trajectory[i][0]))
         yaw_trajectory.append(yaw_trajectory[-1])
         return(position_trajectory,time_trajectory,yaw_trajectory)
+    
         
     def calculate_box(self):
         print("Calculatin Box Waypoints")
@@ -216,4 +221,5 @@ if __name__ == "__main__":
     drone = ControlsFlyer(conn)
     time.sleep(2)
     drone.start()
+    drone.print_mission_score()
     
