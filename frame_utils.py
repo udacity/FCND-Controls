@@ -24,4 +24,4 @@ def euler2RM(roll,pitch,yaw):
     R[1,2] = sr*cp
     R[2,2] = cr*cp
     
-    return R
+    return R.transpose()
