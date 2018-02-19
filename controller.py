@@ -17,8 +17,8 @@ class NonlinearController(object):
 
     def __init__(
         self,
-        Kp_pos=4.0,
-        Kp_vel=4.0,
+        Kp_pos=10.0,
+        Kp_vel=8.0,
         Kp_alt=4.0,
         Kp_hdot=2.0,
         
@@ -112,7 +112,7 @@ class NonlinearController(object):
             
         Returns: desired vehicle 2D acceleration in the local frame [north, east]
         """
-        velocity_cmd = self.Kp_pos*(local_position_cmd-local_position)
+        velocity_cmd = 0*self.Kp_pos*(local_position_cmd-local_position)
         
         #Limit speed
         velocity_norm = np.sqrt(velocity_cmd[0]*velocity_cmd[0]+velocity_cmd[1]*velocity_cmd[1])
