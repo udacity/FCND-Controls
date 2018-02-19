@@ -161,6 +161,7 @@ The previous controller commanded the vehicle to go to and stop at a waypoint. Y
 
 The trajectory following will require a redesign of the control system to account for non-linear transformation from the local frame to the body frame. I may also require retuning of existing control gains because the gains set for the waypoint following may be too high/low to effectively follow the trajectory. The ability to follow a trajectory will be tested with an test trajectory. The trajectory is made up several straight-line segments of varying speed and curved segments. Successful completion of this step include:
 
+* A trajectory controller (trajectory_control) that takes in three lists representing the trajectory (position, time, and heading) and the current time. The controller calculates the target position, velocity, heading from the trajectory lists.
 * A reduced attitude controller (roll_pitch_control) accounting for the non-linear transformation from local accelerations to body rates
 * An altitude controller (altitude_control) including the non-linear effects from non-zero roll/pitch angles
 * The drone flies the test trajectory faster than the default threshold
