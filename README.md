@@ -175,10 +175,10 @@ You will next test the trajectory following against a defined trajectory defined
 * A plot of the vehicle 2d position overplotted with the designed 2D position
 * Plots of the horizontal and vertical position errors versus time
 
-## Step 11: Write it up!
+## Step 12: Write it up!
 When you're finished, complete a detailed writeup of your solution and how you addressed each step. The following is required for submission:
 
-* * Write-up of how you addressed each step
+* Write-up of how you addressed each step
 * The telemetry log of a successful trajectory following
 * A copy of controller.py, with all the methods filled in
 * 2D position plot of your controller flying the Backyard Flyer 10m box
@@ -186,10 +186,10 @@ When you're finished, complete a detailed writeup of your solution and how you a
 * A plot of horizontal position error vs. time from the test trajectory
 * A plot of vertical position error vs. time  from the test trajectory
 
-## Step 12: Additional Challenges (Optional)
+## Step 13: Additional Challenges (Optional)
 * Minimize the time to fly the test trajectory while still meeting the error thresholds
 * Integrate with the planning project solution to generate custom trajectories
-* Test your control's robustness to disturbances and modeling errors. (Simulation Changes Coming)
+* Test your control's robustness to wind disturbances and modeling errors. (Simulation Changes Coming)
 
 
 ## Unity Drone Class
