@@ -49,7 +49,7 @@ class UnityDrone(Drone):
         #Used for the autograder
         self._threshold_horizontal_error = 2.0
         self._threshold_vertical_error = 1.0
-        self._threshold_time = 40.0
+        self._threshold_time = 20.0
         self._average_horizontal_error = 0.0
         self._maximum_horizontal_error = 0.0
         self._average_vertical_error = 0.0

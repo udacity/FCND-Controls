@@ -48,7 +48,7 @@ class ControlsFlyer(UnityDrone):
     def position_controller(self):  
         (self.local_position_target,self.local_velocity_target,yaw_cmd) = self.controller.trajectory_control(self.position_trajectory,self.yaw_trajectory,self.time_trajectory,time.time())
         self.attitude_target = np.array((0.0,0.0,yaw_cmd))
-        acceleration_cmd = self.controller.position_control(self.local_position_target[0:2],0*self.local_velocity_target[0:2],self.local_position[0:2],self.local_velocity[0:2])
+        acceleration_cmd = self.controller.position_control(self.local_position_target[0:2],self.local_velocity_target[0:2],self.local_position[0:2],self.local_velocity[0:2])
         self.local_acceleration_target = np.array([acceleration_cmd[0],acceleration_cmd[1],0.0])
         
     def attitude_controller(self):
@@ -79,6 +79,7 @@ class ControlsFlyer(UnityDrone):
                 self.waypoint_transition()
         elif self.flight_state == States.WAYPOINT:
             #if np.linalg.norm(self.target_position[0:2] - self.local_position[0:2]) < 1.0:
+            if time.time() > self.time_trajectory[self.waypoint_number]:
                 if len(self.all_waypoints) > 0:
                     self.waypoint_transition()
                 else:
@@ -132,7 +133,7 @@ class ControlsFlyer(UnityDrone):
         self.target_position = self.all_waypoints.pop(0)
         print('target position', self.target_position)
         #self.cmd_position(self.target_position[0], self.target_position[1], self.target_position[2], 0.0)
-        self.local_position_target = np.array((self.target_position[0],self.target_position[1],self.target_position[2]))
+        #self.local_position_target = np.array((self.target_position[0],self.target_position[1],self.target_position[2]))
         self.flight_state = States.WAYPOINT
 
     def landing_transition(self):
