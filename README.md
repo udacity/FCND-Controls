@@ -27,9 +27,10 @@ For this project, you'll be writing the control system in 'controller.py'. The c
 * altitude control
 * heading control
 * position control
+* trajectory control
 
-Each of these will be implemented as methods of the NonlinearController class and will fit together as shown (TODO: insert control structure image). The next step will guide you through the changes to 'backyard_flyer.py' to fit the controllers into the right structure.
-
+Each of these will be implemented as methods of the NonlinearController class and will fit together as shown below. The next step will guide you through the changes to 'backyard_flyer.py' to fit the controllers into the right structure.
+![Image of ControlStructure](ControlStructure.png)
 ## Step 6: Modifications to 'backyard_flyer.py'
 The following modifications need to be made to the solution 'backyard_flyer.py'. Feel free to use a copy of your own solution to the Backyard Flyer Project or the one in the link provided.
 
@@ -156,21 +157,23 @@ def waypoint_transition(self):
 	...
     self.waypoint_number = self.waypoint_number+1
 ~~~
-## Step 10: Test the Trajectory Following Controller
+## Step 10: Trajectory Following Controller
 The previous controller commanded the vehicle to go to and stop at a waypoint. You may notice that the vehicle slows down as it gets closer to the waypoint prior to transitioning to the next. Additionally, the vehicle does not necessarily fly the sides of the box and ends up "rounding the corners" (you'll notice this more with tighter turns). The next step of the project will increase the functionality of the drone by providing trajectory following capabilities. Instead of go-to waypoints, trajectory is defined as a position/heading over time. The desired position changes over time and implicitly has a corresponding velocity. The array of positions/time/heading are spaced much closer than the waypoints.
 
-The trajectory following will require a redesign of the control system to account for non-linear transformation from the local frame to the body frame. I may also require retuning of existing control gains because the gains set for the waypoint following may be too high/low to effectively follow the trajectory. The ability to follow a trajectory will be tested with an test trajectory. The trajectory is made up several straight-line segments of varying speed and curved segments. Successful completion of this step include:
+The trajectory following will require a redesign of the control system to account for non-linear transformation from the local frame to the body frame. It may also require retuning of existing control gains because the gains set for the waypoint following may be too high/low to effectively follow the trajectory. The ability to follow a trajectory will be tested with an test trajectory. The trajectory is made up several straight-line segments of varying speed and curved segments. Successful completion of this step include:
 
 * A trajectory controller (trajectory_control) that takes in three lists representing the trajectory (position, time, and heading) and the current time. The controller calculates the target position, velocity, heading from the trajectory lists.
 * A reduced attitude controller (roll_pitch_control) accounting for the non-linear transformation from local accelerations to body rates
 * An altitude controller (altitude_control) including the non-linear effects from non-zero roll/pitch angles
-* The drone flies the test trajectory faster than the default threshold
-* The maximum horizontal error is less than the default threshold
-* The maximum vertical error is less than the default threshold
-* A plot of the vehicle 2d position overplotted with the designed 2D position
-* Plots of the horizontal and vertical position errors over time
 
-To 
+
+## Step 11: Test the Controller!
+You will next test the trajectory following against a defined trajectory defined in 'test_trajectory.txt'. The time, horizontal error, and vertical error are all checked against thresholds in the UnityDrone class. See below for more information on 'Testing the Test Trajectory'. The minimum requirements for this step include:
+* The drone flies the test trajectory faster than the default threshold (20 seconds)
+* The maximum horizontal error is less than the default threshold (2 meters)
+* The maximum vertical error is less than the default threshold (1 meter)
+* A plot of the vehicle 2d position overplotted with the designed 2D position
+* Plots of the horizontal and vertical position errors versus time
 
 ## Step 11: Write it up!
 When you're finished, complete a detailed writeup of your solution and how you addressed each step. The following is required for submission:
