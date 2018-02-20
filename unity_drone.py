@@ -47,9 +47,12 @@ class UnityDrone(Drone):
         self._target_body_rate_time = 0.0
         
         #Used for the autograder
+        self.all_horizontal_errors = np.empty((0),float)
         self._threshold_horizontal_error = 2.0
+        self.all_vertical_errors = np.empty((0),float)
         self._threshold_vertical_error = 1.0
-        self._threshold_time = 40.0
+        self.all_times = np.empty((0),float)
+        self._threshold_time = 20.0
         self._average_horizontal_error = 0.0
         self._maximum_horizontal_error = 0.0
         self._average_vertical_error = 0.0
@@ -107,10 +110,13 @@ class UnityDrone(Drone):
             self._time0 = time.clock()
         
         self._horizontal_error = self.calculate_horizontal_error()
+        self.all_horizontal_errors = np.append(self.all_horizontal_errors,self._horizontal_error)
+        #print(self._horizontal_error)
         self._vertical_error = self.calculate_vertical_error()
+        self.all_vertical_errors = np.append(self.all_vertical_errors,self._vertical_error)
         self._mission_time = time.clock() - self._time0
-        if self._mission_success:
-            self.check_mission_success()
+        self.all_times = np.append(self.all_times,self._mission_time)
+        self.check_mission_success()
         if self._visdom_connected:
             self._add_visual_data()
             
@@ -254,6 +260,8 @@ class UnityDrone(Drone):
         print('Maximum Vertical Error: ', self._maximum_vertical_error)
         print('Mission Time: ', self._mission_time)
         print('Mission Success: ', self._mission_success)
+        if self._visdom_connected:
+            self._show_plots()
         
     def check_mission_success(self):
         """Check the mission success criterion (xtrack and time)
@@ -269,10 +277,17 @@ class UnityDrone(Drone):
                 self._mission_success = False
         if self._mission_time > self._threshold_time:
             self._mission_success = False
-            
-    def _initialize_plots(self):
-        self._horizontal_plot = self._v.line(np.array([0.0]),X=np.array([0.0]),opts=dict(title="Horizontal Error",xlabel="Time(s)",ylabel="Error (m)"))
+        
+        
+     
 
+    def _show_plots(self):
+        self._horizontal_plot = self._v.line(self.all_horizontal_errors, X=self.all_times, opts=dict(title="Horizontal Error",xlabel="Time(s)",ylabel="Error (m)"))
+        self._vertical_plot = self._v.line(self.all_vertical_errors, X=self.all_times, opts=dict(title="Vertical Error", xlabel="Time(s)", ylabel="Error (m)"))
+        
+    def _initialize_plots(self):
+        #self._horizontal_plot = self._v.line(np.array([0.0]),X=np.array([0.0]),opts=dict(title="Horizontal Error",xlabel="Time(s)",ylabel="Error (m)"))
+        pass
 
     def _add_visual_data(self):
         #self._v.line(np.array([self._horizontal_error]),X=np.array([self._mission_time]),win=self._horizontal_plot,update='append')

@@ -259,5 +259,11 @@ Mission Time:  39.27512404109243
 Mission Success:  True
 ~~~
 
+Additionally, if you run visdom, plots of the vertical and horizontal errors along the path (the plots are generated after the run ends). Before starting the script, run in a different terminal:
+~~~
+python -m visdom.server
+~~~
+The plots are default displayed on 'http://localhost:8097/'. Open a web browser after the run is finished to see the displayed error plots.
+
 
 
