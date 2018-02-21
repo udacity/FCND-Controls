@@ -75,25 +75,25 @@ def __init__(self, connection):
 
 ```py
 def __init___(self,connection):
-	...
+    ...
     self.register_callback(MsgID.ATTITUDE, self.attitude_callback)
-	self.register_callback(MsgID.RAW_GYROSCOPE, self.gyro_callback)
+    self.register_callback(MsgID.RAW_GYROSCOPE, self.gyro_callback)
     self.register_callback(MsgID.LOCAL_VELOCITY, self.velocity_callback)
     
 def attitude_callback(self):
     ...
-	if self.flight_state == States.WAYPOINT:
+    if self.flight_state == States.WAYPOINT:
         self.attitude_controller()
     
 def gyro_callback(self):
-	....
+    ....
     if self.flight_state == States.WAYPOINT:
-    	self.bodyrate_controller()
+        self.bodyrate_controller()
             
 def velocity_callback(self):
-	...
+    ...
     if self.flight_state == States.WAYPOINT:
-    	self.position_controller()
+        self.position_controller()
 ```
 
 5. In the waypoint transition method, replace the self.cmd_position method (which is disabled by the UnityDrone class) with setting the target local position
