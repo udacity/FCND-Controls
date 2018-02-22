@@ -116,6 +116,8 @@ Each of the methods in controller.py contain additional instructions. It's highl
 After you've written and tuned the waypoint following controller, test the controller to ensure the waypoint following meets the minimum criterion of the Backyard Flyer project. The minimum requirements for a passing submission for this step include:
 
 * The drone meets the waypoint criterion from the Backyard Flyer
+
+Optional Submission Requirement (Not Required):
 * A plot of the drone's 2D (north/east) position overplotting the desired box north/east positions
 
 Feel free to tune the controller to see how much better your custom designed controller can do than the linear waypoint following controller implemented in the Unity simulator.
@@ -172,15 +174,18 @@ You will next test the trajectory following against a defined trajectory defined
 * The drone flies the test trajectory faster than the default threshold (20 seconds)
 * The maximum horizontal error is less than the default threshold (2 meters)
 * The maximum vertical error is less than the default threshold (1 meter)
+
+Optional Submission Requirements:
 * A plot of the vehicle 2d position overplotted with the designed 2D position
 * Plots of the horizontal and vertical position errors versus time
 
 ## Step 12: Write it up!
 When you're finished, complete a detailed writeup of your solution and how you addressed each step. The following is required for submission:
 
-* Write-up of how you addressed each step
-* The telemetry log of a successful trajectory following
+* The telemetry log of a successful trajectory following flight
 * A copy of controller.py, with all the methods filled in
+
+Optional Submission Requirements (Not Required):
 * 2D position plot of your controller flying the Backyard Flyer 10m box
 * 2D position plot of your controller flying the test trajectory
 * A plot of horizontal position error vs. time from the test trajectory
