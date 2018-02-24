@@ -37,10 +37,11 @@ Each of these will be implemented as methods of the NonlinearController class an
 ## Step 6: Modifications to 'backyard_flyer.py'
 The following modifications need to be made to the solution 'backyard_flyer.py'. Feel free to use a copy of your own solution to the Backyard Flyer Project or the one in the link provided.
 
-1. Import the UnityDrone class and modify the BackyardFlyer class to be a subclass of the UnityDrone class instead of the Drone class. UnityDrone is a subclass the Drone class, so it provides all the functionality of the Drone class along with additional Unity specific commands/functionality (see below)
+1. Import the UnityDrone and NonlinearController classes and modify the BackyardFlyer class to be a subclass of the UnityDrone class instead of the Drone class. UnityDrone is a subclass the Drone class, so it provides all the functionality of the Drone class along with additional Unity specific commands/functionality (see below)
 
 ```py
 from unity_drone import UnityDrone
+from controller import NonlinearController
 ...
 class BackyardFlyer(UnityDrone):
 ```
@@ -53,20 +54,24 @@ def __init__(self, connection):
     self.controller = NonlinearController()
 ```
 
-3. Add the following three methods to your class.
+3. Add the following three methods to your class to incorporate the controller into the backyard flyer. Note that the 
 
 ```py
-    def position_controller(self):  
-        acceleration_cmd = self.controller.position_control(self.local_position_target[0:2],0*self.local_velocity_target[0:2],self.local_position[0:2],self.local_velocity[0:2])
+	
+    def position_controller(self):
+    	"""Sets the local acceleration target using the local position and local velocity"""
+        acceleration_cmd = self.controller.position_control(self.local_position_target[0:2],self.local_velocity_target[0:2],self.local_position[0:2],self.local_velocity[0:2])
         self.local_acceleration_target = np.array([acceleration_cmd[0],acceleration_cmd[1],0.0])
         
     def attitude_controller(self):
+    	"""Sets the body rate target using the acceleration target and attitude"""
         self.thrust_cmd = self.controller.altitude_control(-self.local_position_target[2],-self.local_velocity_target[2],-self.local_position[2],-self.local_velocity[2],self.attitude,9.81*2.0)
-        roll_pitch_rate_cmd = self.controller.roll_pitch_controller(self.local_acceleration_target[0:2],self.attitude,self.thrust_cmd,yaw_cmd=self.attitude_target[2])
+        roll_pitch_rate_cmd = self.controller.roll_pitch_controller(self.local_acceleration_target[0:2],self.attitude,self.thrust_cmd)
         yawrate_cmd = self.controller.yaw_control(self.attitude_target[2],self.attitude[2])
         self.body_rate_target = np.array([roll_pitch_rate_cmd[0],roll_pitch_rate_cmd[1],yawrate_cmd])
         
-    def bodyrate_controller(self):        
+    def bodyrate_controller(self):  
+    	"""Commands a moment to the vehicle using the body rate target and body rates"""
         moment_cmd = self.controller.body_rate_control(self.body_rate_target,self.gyro_raw)
         self.cmd_moment(moment_cmd[0],moment_cmd[1],moment_cmd[2],self.thrust_cmd)
 ```
@@ -96,7 +101,7 @@ def velocity_callback(self):
         self.position_controller()
 ```
 
-5. In the waypoint transition method, replace the self.cmd_position method (which is disabled by the UnityDrone class) with setting the target local position
+5. In the waypoint transition method, replace the self.cmd_position method (which is disabled by the UnityDrone class) with setting the target local position. Note: local_position_target should be in NED coordinates, the backyard_flyer solution may calculate the bo in NE altitude coordinates
 
 ```py
 #replace this
@@ -141,13 +146,13 @@ def position_controller(self):
         self.attitude_target = np.array((0.0,0.0,yaw_cmd))
 ```
 
-2. Load the test trajectory instead of calculating the box
+2. Remove calculate box and load the test trajectory
 
 ```py
-#replace
+#replace this
 self.all_waypoints = self.calculate_box()
 
-#with
+#with this
 (self.position_trajectory,self.time_trajectory,self.yaw_trajectory) = self.load_test_trajectory(time_mult=0.5)
 self.all_waypoints = self.position_trajectory.copy()
 self.waypoint_number = -1
