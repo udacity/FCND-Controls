@@ -7,11 +7,13 @@ components:
     waypoint following
 """
 import numpy as np
+from frame_utils import euler2RM
 
 class NonlinearController(object):
 
     def __init__(self):
-        pass    
+        """Initialize the controller object and control gains"""
+        return    
     
     def trajectory_control(self,position_trajectory,yaw_trajectory,time_trajectory,current_time):
         """Generate a commanded position, velocity and yaw based on the trajectory
@@ -25,7 +27,7 @@ class NonlinearController(object):
         Returns: tuple (commanded position, commanded velocity, commanded yaw)
                 
         """
-        pass
+        return (np.array([0.0,0.0,0.0]),np.array([0.0,0.0,0.0]),0.0)
     
     def position_control(self, local_position_cmd, local_velocity_cmd, local_position, local_velocity,
                                acceleration_ff = np.array([0.0,0.0])):
@@ -40,7 +42,7 @@ class NonlinearController(object):
             
         Returns: desired vehicle 2D acceleration in the local frame [north, east]
         """
-        pass
+        return np.array([0.0,0.0])
     
     def altitude_control(self,altitude_cmd,vertical_velocity_cmd,altitude,vertical_velocity,attitude,acceleration_ff=0.0):
         """Generate vertical acceleration (thrust) command
@@ -52,10 +54,10 @@ class NonlinearController(object):
             vertical_velocity: vehicle vertical velocity (+up)
             acceleration_ff: feedforward acceleration command (+up)
             
-        Returns: 2-element numpy array, desired vehicle 2D acceleration in the local frame [north, east]
+        Returns: thrust command for the vehicle (+up)
         """
+        return 0.0
         
-        pass
     
     def roll_pitch_controller(self,acceleration_cmd,attitude,thrust_cmd):
         """ Generate the rollrate and pitchrate commands in the body frame
@@ -67,7 +69,7 @@ class NonlinearController(object):
             
         Returns: 2-element numpy array, desired rollrate (p) and pitchrate (q) commands in radians/s
         """
-        pass
+        return np.array([0.0,0.0])
     
     def body_rate_control(self,body_rate_cmd,body_rate):
         """ Generate the roll, pitch, yaw moment commands in the body frame
@@ -78,7 +80,7 @@ class NonlinearController(object):
             
         Returns: 3-element numpy array, desired roll moment, pitch moment, and yaw moment commands in Newtons*meters
         """
-        pass
+        return np.array([0.0,0.0,0.0])
     
     def yaw_control(self,yaw_cmd,yaw):
         """ Generate the target yawrate
@@ -89,5 +91,5 @@ class NonlinearController(object):
         
         Returns: target yawrate in radians/sec
         """
-        pass
+        return 0.0
     
