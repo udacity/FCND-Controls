@@ -17,10 +17,10 @@ class NonlinearController(object):
 
     def __init__(
         self,
-        Kp_pos=12.0,
-        Kp_vel=8.0,
-        Kp_alt=4.0,
-        Kp_hdot=2.0,
+        Kp_pos=6.0,
+        Kp_vel=4.0,
+        Kp_alt=2.0,
+        Kp_hdot=1.0,
         
         Kp_roll=8,#6.5,
         Kp_pitch=8,#6.5,
@@ -134,7 +134,7 @@ class NonlinearController(object):
             vertical_velocity: vehicle vertical velocity (+up)
             acceleration_ff: feedforward acceleration command (+up)
             
-        Returns: 2-element numpy array, desired vehicle 2D acceleration in the local frame [north, east]
+        Returns: thrust force in Newtons
         """
         
         hdot_cmd = self.Kp_alt*(altitude_cmd-altitude)+vertical_velocity_cmd
@@ -148,7 +148,7 @@ class NonlinearController(object):
         acceleration_cmd = acceleration_ff + self.Kp_hdot*(hdot_cmd - vertical_velocity)
         
         R33 = np.cos(attitude[0])*np.cos(attitude[1])
-        thrust = acceleration_cmd/R33
+        thrust = DRONE_MASS_KG*acceleration_cmd/R33
         return thrust
     
     def roll_pitch_controller(self,acceleration_cmd,attitude,thrust_cmd,yaw_cmd=0.0):
@@ -164,14 +164,12 @@ class NonlinearController(object):
         #Calculate rotation matrix        
         R = euler2RM(attitude[0],attitude[1],attitude[2])
 
+        c_d = thrust_cmd/DRONE_MASS_KG
         
-        #Tranform into the body frame
-        #acceleration_cmd[0] = acceleration_cmd[0]*R_yaw[0,0]+acceleration_cmd[1]*R_yaw[0,1]
-        #acceleration_cmd[1] = acceleration_cmd[0]*R_yaw[1,0]+acceleration_cmd[1]*R_yaw[1,1]
         #Only command if positive thrust
         if thrust_cmd > 0.0:
-            target_R13 = -min(max(acceleration_cmd[0].item()/thrust_cmd.item(),-1.0),1.0)
-            target_R23 = -min(max(acceleration_cmd[1].item()/thrust_cmd.item(),-1.0),1.0)
+            target_R13 = -min(max(acceleration_cmd[0].item()/c_d,-1.0),1.0)
+            target_R23 = -min(max(acceleration_cmd[1].item()/c_d,-1.0),1.0)
             
             p_cmd = (1/R[2,2])*(-R[1,0]*self.Kp_roll*(R[0,2]-target_R13)+R[0,0]*self.Kp_pitch*(R[1,2]-target_R23))
             q_cmd = (1/R[2,2])*(-R[1,1]*self.Kp_roll*(R[0,2]-target_R13)+R[0,1]*self.Kp_pitch*(R[1,2]-target_R23))
