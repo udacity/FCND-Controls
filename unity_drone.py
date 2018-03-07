@@ -87,7 +87,8 @@ class UnityDrone(Drone):
         try:
             self.connection.cmd_moment(roll_moment, pitch_moment, yaw_moment, thrust)
         except Exception as e:
-            traceback.print_exc()
+            # traceback.print_exc()
+            pass
         
     @property
     def local_position_target(self):
@@ -103,7 +104,8 @@ class UnityDrone(Drone):
         try:
             self.connection.local_position_target(target[0], target[1], target[2], t)
         except:
-            traceback.print_exec()
+            # traceback.print_exec()
+            pass
         
         #Check for current xtrack error
         if self._time0 is None:
@@ -135,7 +137,8 @@ class UnityDrone(Drone):
         try:
             self.connection.local_velocity_target(target[0], target[1], target[2], t)
         except:
-            traceback.print_exec()
+            # traceback.print_exec()
+            pass
             
     @property
     def local_acceleration_target(self):
@@ -150,7 +153,8 @@ class UnityDrone(Drone):
         try:
             self.connection.local_acceleration_target(target[0],target[1],target[2], t)
         except:
-            traceback.print_exec()
+            # traceback.print_exec()
+            pass
     @property
     def attitude_target(self):
         return np.array([self._target_roll,self._target_pitch,self._target_yaw])
@@ -165,7 +169,8 @@ class UnityDrone(Drone):
         try:
             self.connection.attitude_target(target[0], target[1], target[2], t)
         except:
-            traceback.print_exec()
+            # traceback.print_exec()
+            pass
             
     @property
     def body_rate_target(self):
@@ -181,7 +186,8 @@ class UnityDrone(Drone):
         try:
             self.connection.body_rate_target(target[0],target[1],target[2], t)
         except:
-            traceback.print_exec()
+            # traceback.print_exec()
+            pass
     
     @property
     def threshold_horizontal_error(self):
