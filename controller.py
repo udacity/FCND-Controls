@@ -15,7 +15,7 @@ class NonlinearController(object):
         """Initialize the controller object and control gains"""
         return    
     
-    def trajectory_control(self,position_trajectory,yaw_trajectory,time_trajectory,current_time):
+    def trajectory_control(self, position_trajectory, yaw_trajectory, time_trajectory, current_time):
         """Generate a commanded position, velocity and yaw based on the trajectory
         
         Args:
@@ -29,7 +29,7 @@ class NonlinearController(object):
         """
         return (np.array([0.0,0.0,0.0]),np.array([0.0,0.0,0.0]),0.0)
     
-    def position_control(self, local_position_cmd, local_velocity_cmd, local_position, local_velocity,
+    def lateral_position_control(self, local_position_cmd, local_velocity_cmd, local_position, local_velocity,
                                acceleration_ff = np.array([0.0,0.0])):
         """Generate horizontal acceleration commands for the vehicle in the local frame
 
@@ -44,7 +44,7 @@ class NonlinearController(object):
         """
         return np.array([0.0,0.0])
     
-    def altitude_control(self,altitude_cmd,vertical_velocity_cmd,altitude,vertical_velocity,attitude,acceleration_ff=0.0):
+    def altitude_control(self, altitude_cmd, vertical_velocity_cmd, altitude, vertical_velocity, attitude, acceleration_ff=0.0):
         """Generate vertical acceleration (thrust) command
 
         Args:
@@ -59,7 +59,7 @@ class NonlinearController(object):
         return 0.0
         
     
-    def roll_pitch_controller(self,acceleration_cmd,attitude,thrust_cmd):
+    def roll_pitch_controller(self, acceleration_cmd, attitude, thrust_cmd):
         """ Generate the rollrate and pitchrate commands in the body frame
         
         Args:
@@ -71,7 +71,7 @@ class NonlinearController(object):
         """
         return np.array([0.0,0.0])
     
-    def body_rate_control(self,body_rate_cmd,body_rate):
+    def body_rate_control(self, body_rate_cmd, body_rate):
         """ Generate the roll, pitch, yaw moment commands in the body frame
         
         Args:
@@ -82,7 +82,7 @@ class NonlinearController(object):
         """
         return np.array([0.0,0.0,0.0])
     
-    def yaw_control(self,yaw_cmd,yaw):
+    def yaw_control(self, yaw_cmd, yaw):
         """ Generate the target yawrate
         
         Args:

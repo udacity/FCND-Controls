@@ -75,7 +75,7 @@ def position_controller(self):
     (self.local_position_target, self.local_velocity_target, yaw_cmd) = self.controller.trajectory_control(self.position_trajectory, self.yaw_trajectory, self.time_trajectory, time.time())
     self.attitude_target = np.array((0.0, 0.0, yaw_cmd))
 
-    acceleration_cmd = self.controller.position_control(self.local_position_target[0:2], self.local_velocity_target[0:2], self.local_position[0:2], self.local_velocity[0:2])
+    acceleration_cmd = self.controller.lateral_position_control(self.local_position_target[0:2], self.local_velocity_target[0:2], self.local_position[0:2], self.local_velocity[0:2])
     self.local_acceleration_target = np.array([acceleration_cmd[0], acceleration_cmd[1], 0.0])
     
 def attitude_controller(self):
@@ -184,8 +184,7 @@ For this project, you'll be writing the control system in `controller.py`. The c
  - reduced attitude control
  - altitude control
  - heading control
- - position control
- - trajectory control
+ - lateral position control
 
 Each of these will be implemented as methods of the `NonlinearController` class and will fit together as shown below. The next step will guide you through the changes to `backyard_flyer.py` to fit the controllers into the right structure.
 
@@ -206,7 +205,7 @@ The minimum requirements for a successful submission include completing the foll
  - `altitude_control()` - an altitude controller that uses both the down position and the down velocity to command thrust.  Note that you will need to include the non-linear effects from non-zero roll/pitch angles!
  - `yaw_control()` - a linear/proportional heading controller to yaw rate commands (non-linear transformation not required)
  - `roll_pitch_control()` - a reduced attitude controller taking in local acceleration or attitude commands and outputs body rate command.  Note that you will need to account for the non-linear transformation from local accelerations to body rates!
- - `position_control()` - a linear position controller using the local north/east position and local north/east velocity to generate a commanded local acceleration
+ - `lateral_position_control()` - a linear position controller using the local north/east position and local north/east velocity to generate a commanded local acceleration
  - The final moment/thrust commands limit the input at given saturation limits
 
 
