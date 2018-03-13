@@ -21,6 +21,23 @@ In this beta version the simulator is provided in the repository. For students, 
 
 If you haven't already, set up your Python environment and get all the relevant packages installed using Anaconda following instructions in [this repository](https://github.com/udacity/FCND-Term1-Starter-Kit)
 
+#### Make sure Udacidrone is to to date
+
+Let's quickly make sure you have the most up to date version of udacidrone, which will allow you to use the full functionality of the controls simulator environment.
+
+First make sure you have activated your environment:
+
+```sh
+source activate fcnd
+```
+
+Then run the update:
+
+```sh
+pip install udacidrone --upgrade
+```
+
+
 ### Step 3: clone this repository
 
 ```sh
