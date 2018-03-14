@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-Solution to the Controls Project.
+Starter code for the controls project.
+This is the solution of the backyard flyer script, 
+modified for all the changes required to get it working for controls.
 """
 
 import time
@@ -52,9 +54,9 @@ class ControlsFlyer(UnityDrone):
          yaw_cmd) = self.controller.trajectory_control(
                  self.position_trajectory,
                  self.yaw_trajectory,
-                 self.time_trajectory,time.time())
-        self.attitude_target = np.array((0.0,0.0,yaw_cmd))
-        acceleration_cmd = self.controller.position_control(
+                 self.time_trajectory, time.time())
+        self.attitude_target = np.array((0.0, 0.0, yaw_cmd))
+        acceleration_cmd = self.controller.lateral_position_control(
                 self.local_position_target[0:2],
                 self.local_velocity_target[0:2],
                 self.local_position[0:2],
@@ -79,7 +81,7 @@ class ControlsFlyer(UnityDrone):
                 self.attitude_target[2],
                 self.attitude[2])
         self.body_rate_target = np.array(
-                [roll_pitch_rate_cmd[0],roll_pitch_rate_cmd[1],yawrate_cmd])
+                [roll_pitch_rate_cmd[0], roll_pitch_rate_cmd[1], yawrate_cmd])
         
     def bodyrate_controller(self):        
         moment_cmd = self.controller.body_rate_control(
@@ -104,8 +106,7 @@ class ControlsFlyer(UnityDrone):
                 #self.all_waypoints = self.calculate_box()
                 (self.position_trajectory,
                  self.time_trajectory,
-                 self.yaw_trajectory) = self.load_test_trajectory(
-                         time_mult=0.5)
+                 self.yaw_trajectory) = self.load_test_trajectory(time_mult=0.5)
                 self.all_waypoints = self.position_trajectory.copy()
                 self.waypoint_number = -1
                 self.waypoint_transition()
@@ -165,7 +166,7 @@ class ControlsFlyer(UnityDrone):
 
     def waypoint_transition(self):
         #print("waypoint transition")
-        self.waypoint_number = self.waypoint_number+1
+        self.waypoint_number = self.waypoint_number + 1
         self.target_position = self.all_waypoints.pop(0)
         self.flight_state = States.WAYPOINT
 

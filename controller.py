@@ -21,15 +21,15 @@ class NonlinearController(object):
         Kp_alt=4.0,
         Kp_hdot=2.0,
         
-        Kp_roll=8,#6.5,
-        Kp_pitch=8,#6.5,
-        Kp_yaw=4.5,
+        Kp_roll=8,#8,#6.5,
+        Kp_pitch=8,#8,#6.5,
+        Kp_yaw=4.5, #4.5,
         
         Kp_p=20,#10,
         Kp_q=20,#10,
         Kp_r=10,
         
-        max_tilt=0.5,
+        max_tilt=0.75,
         max_ascent_rate=5,
         max_descent_rate=2,
         max_speed=5.0
@@ -101,7 +101,7 @@ class NonlinearController(object):
         
         return (position_cmd,velocity_cmd,yaw_cmd)
     
-    def position_control(self, local_position_cmd,
+    def lateral_position_control(self, local_position_cmd,
                          local_velocity_cmd, local_position, local_velocity,
                          acceleration_ff = np.array([0.0,0.0])):
         """Generate horizontal acceleration commands for the vehicle in the
@@ -191,14 +191,14 @@ class NonlinearController(object):
         c_d = thrust_cmd/DRONE_MASS_KG
         
         if thrust_cmd > 0.0:
-            target_R13 = -min(max(acceleration_cmd[0].item()/c_d,-1.0),1.0)
-            target_R23 = -min(max(acceleration_cmd[1].item()/c_d,-1.0),1.0)
+            target_R13 = -np.clip(acceleration_cmd[0].item()/c_d, -self.max_tilt, self.max_tilt) #-min(max(acceleration_cmd[0].item()/c_d, -self.max_tilt), self.max_tilt)
+            target_R23 = -np.clip(acceleration_cmd[1].item()/c_d, -self.max_tilt, self.max_tilt) #-min(max(acceleration_cmd[1].item()/c_d, -self.max_tilt), self.max_tilt)
             
             p_cmd = (1/R[2,2])* \
-                    (-R[1,0]*self.Kp_roll*(R[0,2]-target_R13)+ \
+                    (-R[1,0]*self.Kp_roll*(R[0,2]-target_R13) + \
                      R[0,0]*self.Kp_pitch*(R[1,2]-target_R23))
             q_cmd = (1/R[2,2])* \
-                    (-R[1,1]*self.Kp_pitch*(R[0,2]-target_R13)+ \
+                    (-R[1,1]*self.Kp_roll*(R[0,2]-target_R13) + \
                      R[0,1]*self.Kp_pitch*(R[1,2]-target_R23))
         else: #Otherwise command no rate
             p_cmd = 0.0
