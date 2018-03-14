@@ -193,6 +193,10 @@ If you've got everything set up properly, you should see your quad quite uncerem
 Now let's get to the fun part, time for you to write your own controller!
 
 
+### Alternative to setting up your `backyard_flyer`
+
+We have provided start code that takes the `backyard_flyer` solution and adds the above modifications in the `controls_flyer.py` script.  Feel free to use that as the starting point, or your own script.
+
 ## Get Familiar with the Code ##
 
 For this project, you'll be writing the control system in `controller.py`. The controller is separated into five parts:
