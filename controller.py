@@ -21,8 +21,8 @@ class NonlinearController(object):
         Kp_alt=4.0,
         Kp_hdot=1.0, #2.0,
         
-        Kp_roll=7,  #8,#6.5,
-        Kp_pitch=7,  #8,#6.5,
+        Kp_roll=8,  #8,#6.5,
+        Kp_pitch=8,  #8,#6.5,
         Kp_yaw=4.5,  #4.5, #4.5,
         
         Kp_p=20,#10,
@@ -157,16 +157,12 @@ class NonlinearController(object):
         hdot_cmd = self.Kp_alt * (altitude_cmd - altitude) + vertical_velocity_cmd
         
         # Limit the ascent/descent rate
-        if hdot_cmd > self.max_ascent_rate:
-            hdot_cmd = self.max_ascent_rate
-        elif hdot_cmd < -self.max_descent_rate:
-            hdot_cmd = -self.max_descent_rate
-            
-        acceleration_cmd = DRONE_MASS_KG * acceleration_ff + \
-                        self.Kp_hdot*(hdot_cmd - vertical_velocity)
+        hdot_cmd = np.clip(hdot_cmd, -self.max_descent_rate, self.max_ascent_rate)
+
+        acceleration_cmd = acceleration_ff + self.Kp_hdot*(hdot_cmd - vertical_velocity)
         
         R33 = np.cos(attitude[0]) * np.cos(attitude[1])
-        thrust = acceleration_cmd / R33
+        thrust = DRONE_MASS_KG * acceleration_cmd / R33
         
         if thrust > MAX_THRUST:
             thrust = MAX_THRUST
