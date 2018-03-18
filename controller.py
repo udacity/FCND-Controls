@@ -9,7 +9,7 @@ DRONE_MASS_KG = 0.5
 GRAVITY = -9.81
 MOI = np.array([0.005, 0.005, 0.01])
 MAX_THRUST = 10.0
-MAX_TORQUE = 1.0
+MAX_TORQUE = 1 #1.0
 
 
 class NonlinearController(object):
@@ -19,7 +19,7 @@ class NonlinearController(object):
         Kp_pos=6,#12.0,
         Kp_vel=4,#8.0,
         Kp_alt=4.0,
-        Kp_hdot=1.0, #2.0,
+        Kp_hdot=1.5, #2.0,
         
         Kp_roll=8,  #8,#6.5,
         Kp_pitch=8,  #8,#6.5,
