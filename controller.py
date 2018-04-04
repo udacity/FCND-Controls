@@ -91,6 +91,7 @@ class NonlinearController(object):
             vertical_velocity_cmd: desired vertical velocity (+up)
             altitude: vehicle vertical position (+up)
             vertical_velocity: vehicle vertical velocity (+up)
+            attitude: the vehicle's current attitude, 3 element numpy array (roll, pitch, yaw) in radians
             acceleration_ff: feedforward acceleration command (+up)
             
         Returns: thrust command for the vehicle (+up)
@@ -103,7 +104,7 @@ class NonlinearController(object):
         
         Args:
             target_acceleration: 2-element numpy array (north_acceleration_cmd,east_acceleration_cmd) in m/s^2
-            attitude: 3-element numpy array (roll,pitch,yaw) in radians
+            attitude: 3-element numpy array (roll, pitch, yaw) in radians
             thrust_cmd: vehicle thruts command in Newton
             
         Returns: 2-element numpy array, desired rollrate (p) and pitchrate (q) commands in radians/s
@@ -115,7 +116,7 @@ class NonlinearController(object):
         
         Args:
             body_rate_cmd: 3-element numpy array (p_cmd,q_cmd,r_cmd) in radians/second^2
-            attitude: 3-element numpy array (p,q,r) in radians/second^2
+            body_rate: 3-element numpy array (p,q,r) in radians/second^2
             
         Returns: 3-element numpy array, desired roll moment, pitch moment, and yaw moment commands in Newtons*meters
         """
