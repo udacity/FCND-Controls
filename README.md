@@ -110,7 +110,7 @@ def bodyrate_controller(self):
 
 ### Step 4
 
-Register and add callbacks for the `RAW_GYROSCOPE`, `ATTITUDE`, and `LOCAL_VELOCITY` messages. Call the appropriate level of control in each callback (i.e. `bodyrate_controller()` is called in `gyro_callback()`):
+Register and add callbacks for the `RAW_GYROSCOPE`, `ATTITUDE`, and `LOCAL_VELOCITY` messages.  Note that you may already have the `velocity_callback()` function implemented; if so, replace `velocity_callback()` with the callback below. Call the appropriate level of control in each callback (i.e. `bodyrate_controller()` is called in `gyro_callback()`):
 
 ```py
 def __init___(self,connection):
