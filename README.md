@@ -34,7 +34,7 @@ source activate fcnd
 Then run the update:
 
 ```sh
-pip install udacidrone --upgrade
+pip install -U git+https://github.com/udacity/udacidrone.git
 ```
 
 
