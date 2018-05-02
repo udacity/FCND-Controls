@@ -1,5 +1,10 @@
 # FCND Controls Project
 
+> ### IMPORTANT UPDATE
+> As of May 04, 2018 the Python portion of the Controls project is now *optional*. You will only be submitting the C++ portion of this project. For more on why we made this decision, look at the [Submission](#Submission) section at the bottom of this document.
+ 
+
+
 For this project, you will write the low level flight controllers for the vehicle. In the previous projects, commanded positions were passed to the simulation. In this project, commands will be passed as three directional body moments and thrust. Using the position, velocity, attitude, and body rates sent from the simulation, you will first write several nested control loops to achieve waypoint following control of the first project. Next, you'll expand these capabilities to follow a timed trajectory. The goal of the trajectory following will be to arrive at the end within the specified time while maintaining position errors below a threshold. After the Python portion of the project, you will modify a C++ controller.
 
 For easy navigation, this document is broken up into the following sections:
@@ -21,7 +26,7 @@ In this beta version the simulator is provided in the repository. For students, 
 
 If you haven't already, set up your Python environment and get all the relevant packages installed using Anaconda following instructions in [this repository](https://github.com/udacity/FCND-Term1-Starter-Kit)
 
-#### Make sure Udacidrone is to to date
+#### Make sure Udacidrone is up to date
 
 Let's quickly make sure you have the most up to date version of udacidrone, which will allow you to use the full functionality of the controls simulator environment.
 
@@ -220,7 +225,7 @@ For this project, we will be increasing the functionality of the drone by provid
 
 Trajectory following requires a much more tuned and tighter controller than what the default drone in Unity had, therefore you will be writing the nested low-level controller needed to achieve trajectory following.  To do this you'll be filling in methods in the `controller.py` class. Using the linear or non-linear dynamics and control from the lessons, you'll write the control code for each of the controller parts showing control diagram shown above.
 
-The minimum requirements for a successful submission include completing the following:
+The minimum requirements for a successful project include completing the following:
 
  - `body_rate_control()` - a proportional controller on body rates to commanded moments
  - `altitude_control()` - an altitude controller that uses both the down position and the down velocity to command thrust.  Note that you will need to include the non-linear effects from non-zero roll/pitch angles!
@@ -250,7 +255,7 @@ This will have your controller attempt to hold at a fixed point just about the o
 
 You will be testing your trajectory following against a trajectory defined in `test_trajectory.txt`. The time, horizontal error, and vertical error are all checked against thresholds in `UnityDrone`. See below for more information on [Testing the Test Trajectory](#testing-on-the-test-trajectory). 
 
-As with most real systems, in the end there are a set of performance metrics your controller should be able to satisfy.  Therefore the minimum requires for a successful submission include:
+As with most real systems, in the end there are a set of performance metrics your controller should be able to satisfy.  Therefore the minimum requirements for a successful project include:
 
  - The drone flies the test trajectory faster than the default threshold (20 seconds)
  - The maximum horizontal error is less than the default threshold (2 meters)
@@ -261,18 +266,17 @@ Make sure to [run and check the auto-evaluator](#testing-on-the-test-trajectory)
 
 ### Submission
 
-When you're finished and your controller is successfully able to meet the evaluation requirements, complete a detailed writeup of your solution and how you addressed each of the control functions. The following is required for submission:
+As of early May 2018, you are no longer required to submit this project. You are only required to submit the C++ project.
 
- - The telemetry log of a successful trajectory following flight
- - A copy of `controller.py`, with all the methods filled in
+#### Why are we no longer requiring this portion?
+We constantly listen to student feedback and do our best to improve the learning experience based on that feedback. 
 
-Optional Submission Requirements (Not Required):
+After analyzing the feedback from the first round of students who went through this project we learned that it was taking students much longer to complete than we had anticipated.
 
- - 2D position plot of your controller flying the test trajectory
- - A plot of the vehicle 2d position overplotted with the designed 2D position
- - A plot of horizontal position error vs. time from the test trajectory
- - A plot of vertical position error vs. time  from the test trajectory
- 
+There were a few reasons why this project was taking so long, but a lot of it had to do with debugging and tuning. Simply put: we didn't include enough support for incremental development and tuning of the individual controllers in this portion of the project. This meant that some students were spending hours and hours trying to tune their controllers (all without knowing whether their controller implementations were even correct). This is not a productive use of your valuable learning time! 
+
+The C++ portion of the project is broken into several smaller steps. Each of these steps provides some feedback on the correctness of your controller. You'll still have to deal with some of the pain of tuning, but it wouldn't be a controls project if that weren't the case.
+
 
 
 ### Additional Challenges (Optional)
